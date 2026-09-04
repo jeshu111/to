@@ -16,6 +16,7 @@
 </head>
 <body class="bg-[#FAF7F2] text-[#2D2B2A] font-sans min-h-screen">
 
+  <!-- HEADER -->
   <header class="sticky top-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E8E1D7] px-4 py-3 shadow-sm">
     <div class="max-w-6xl mx-auto flex items-center justify-between">
       <div class="flex items-center space-x-2">
@@ -38,6 +39,7 @@
 
   <main class="max-w-6xl mx-auto px-4 py-6">
 
+    <!-- 1. OVERVIEW -->
     <section id="sec-overview" class="tab-content space-y-6">
       <div class="bg-white p-6 rounded-2xl border border-[#E8E1D7] flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
@@ -73,6 +75,7 @@
       </div>
     </section>
 
+    <!-- 2. ITINERARY -->
     <section id="sec-itinerary" class="tab-content hidden space-y-4">
       <div class="bg-white p-4 rounded-2xl border border-[#E8E1D7]">
         <h2 class="text-xl font-bold text-[#3D405B] mb-3">🗓️ 일자별 일정</h2>
@@ -81,6 +84,7 @@
       <div id="itinerary-timeline" class="space-y-3"></div>
     </section>
 
+    <!-- 3. GOURMET -->
     <section id="sec-gourmet" class="tab-content hidden space-y-4">
       <div class="bg-white p-4 rounded-2xl border border-[#E8E1D7] flex flex-col sm:flex-row gap-3">
         <input type="text" id="gourmet-search" oninput="filterGourmet()" placeholder="식당, 메뉴, 지역 검색..." class="flex-grow p-2 text-xs border rounded-xl bg-[#FAF7F2]">
@@ -96,6 +100,7 @@
       <div id="gourmet-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
 
+    <!-- 4. FLASHCARDS -->
     <section id="sec-flashcards" class="tab-content hidden space-y-4">
       <div class="max-w-md mx-auto space-y-4">
         <div class="flex justify-between items-center text-xs text-gray-500">
@@ -128,6 +133,7 @@
       </div>
     </section>
 
+    <!-- 5. BUDGET -->
     <section id="sec-budget" class="tab-content hidden space-y-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-white p-4 rounded-2xl border border-[#E8E1D7]">
@@ -148,6 +154,7 @@
       </div>
     </section>
 
+    <!-- 6. CHECKLIST -->
     <section id="sec-checklist" class="tab-content hidden space-y-4">
       <div class="bg-white p-6 rounded-2xl border border-[#E8E1D7] space-y-3">
         <h3 class="font-bold text-base text-[#3D405B]">✅ 준비물 체크리스트</h3>
@@ -164,63 +171,48 @@
 
   </main>
 
+  <!-- FIREBASE MODULE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCIxdpE0ogvq2oCQ4YR2zABhqUXJ_rNK6Y",
+      authDomain: "ssss-56bb0.firebaseapp.com",
+      projectId: "ssss-56bb0",
+      storageBucket: "ssss-56bb0.firebasestorage.app",
+      messagingSenderId: "1075238133078",
+      appId: "1:1075238133078:web:2e99e2b13f242920facaf7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const docRef = doc(db, "travel_data", "tokyo_2026");
+
+    onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        console.log("실시간 데이터 로드 성공:", data);
+      }
+    });
+
+    window.autoSaveData = async function(updatedData) {
+      try {
+        await setDoc(docRef, updatedData, { merge: true });
+        console.log("자동 저장 완료!");
+      } catch (e) {
+        console.error("저장 실패:", e);
+      }
+    };
+  </script>
+
+  <!-- MAIN APP SCRIPT -->
   <script>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-  // 1. Firebase 설정 (2단계에서 복사한 설정 값 넣기)
-  const firebaseConfig = {
-    apiKey: "AIzaSyCIxdpE0ogvq2oCQ4YR2zABhqUXJ_rNK6Y",
-    authDomain: "ssss-56bb0.firebaseapp.com",
-    projectId: "ssss-56bb0",
-    storageBucket: "ssss-56bb0.firebasestorage.app",
-    messagingSenderId: "1075238133078",
-    appId: "1:1075238133078:web:2e99e2b13f242920facaf7"
-  };
-
-  // 2. Firebase 초기화
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // 저장할 문서 참조 (예: 'travel_data' 컬렉션의 'tokyo_2026' 문서)
-  const docRef = doc(db, "travel_data", "tokyo_2026");
-
-  // 3. 웹페이지 접속 시 데이터 실시간 동기화 (불러오기)
-  onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      // 데이터베이스의 값으로 UI 업데이트 (예: 예산, 체크리스트 등)
-      console.log("실시간 데이터 로드 성공:", data);
-      // updateUI(data); // 화면 업데이트 함수 호출
-    }
-  });
-
-  // 4. 자동 저장 함수 (디바운스/입력 변경 이벤트와 연결)
-  export async function autoSaveData(updatedData) {
-    try {
-      await setDoc(docRef, updatedData, { merge: true });
-      console.log("자동 저장 완료!");
-    } catch (e) {
-      console.error("저장 실패:", e);
-    }
-  }
-
-  // 예시: 체크리스트나 입력폼 변경 시 자동 저장 호출
-  // document.getElementById('budgetInput').addEventListener('input', (e) => {
-  //   autoSaveData({ budget: e.target.value });
-  // });
-</script>
-
-
-    // TAB SWITCHING
     function switchTab(tab) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       document.getElementById(`sec-${tab}`).classList.remove('hidden');
     }
 
-    // ITINERARY DATA
     const days = [
       { day: 1, label: 'DAY 1 (10/29 목)', items: ['08:45 인천 출발 ✈️', '11:15 나리타 도착 & TCAT 이동', '13:30 츠지한 점심', '15:00 호텔 체크인', '17:00 시부야 야경 & 토리카츠 저녁'] },
       { day: 2, label: 'DAY 2 (10/30 금)', items: ['10:00 마루노우치 브런치', '12:00 하라주쿠/오모테산도 쇼핑', '16:00 시바 공원 스냅', '18:00 도쿄 타워 야경'] },
@@ -248,7 +240,6 @@
         </div>`;
     }
 
-    // GOURMET DATA
     const gourmetList = [
       { name: '츠지한', area: '긴자', cat: '식사', desc: '도쿄 대표 카이센동 맛집' },
       { name: '토리카츠', area: '시부야', cat: '식사', desc: '가성비 훌륭한 골목 카츠 전문점' },
@@ -275,7 +266,6 @@
       `).join('');
     }
 
-    // FLASHCARDS DATA
     const cards = [
       { front: "이걸로 주세요.", back: "Kore o kudasai", sub: "これをください" },
       { front: "추천 메뉴가 무엇인가요?", back: "Osusume wa nandesuka?", sub: "おすすめは何ですか？" },
@@ -301,7 +291,6 @@
       speechSynthesis.speak(u);
     }
 
-    // BUDGET CHART & CALC
     let budgetChart;
     function initChart() {
       const ctx = document.getElementById('budgetChart').getContext('2d');
@@ -327,7 +316,6 @@
       budgetChart.update();
     }
 
-    // INIT
     window.onload = () => {
       renderDays();
       filterGourmet();
