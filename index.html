@@ -375,31 +375,27 @@
             <span class="text-xs font-normal text-gray-500">엔화 환율 (100엔 = 약 900원 기준)</span>
           </h3>
 
-          <div class="space-y-3 text-sm">
-            <div class="flex items-center justify-between border-b pb-2">
-              <span class="font-medium text-gray-700">✈️ 항공권 (에어프레미아 2인)</span>
-              <input type="number" id="input-flight" value="700000" oninput="updateBudgetCalc()" class="w-28 text-right px-2 py-1 border rounded text-xs font-bold">
-            </div>
-            <div class="flex items-center justify-between border-b pb-2">
-              <span class="font-medium text-gray-700">🏨 숙박비 (호텔 라이브맥스 4박)</span>
-              <input type="number" id="input-hotel" value="480000" oninput="updateBudgetCalc()" class="w-28 text-right px-2 py-1 border rounded text-xs font-bold">
-            </div>
-            <div class="flex items-center justify-between border-b pb-2">
-              <span class="font-medium text-gray-700">🍱 식비 & 디저트 카페 (4박 5일)</span>
-              <input type="number" id="input-food" value="650000" oninput="updateBudgetCalc()" class="w-28 text-right px-2 py-1 border rounded text-xs font-bold">
-            </div>
-            <div class="flex items-center justify-between border-b pb-2">
-              <span class="font-medium text-gray-700">🎟️ 티켓 (해리포터 & 도쿄타워)</span>
-              <input type="number" id="input-ticket" value="180000" oninput="updateBudgetCalc()" class="w-28 text-right px-2 py-1 border rounded text-xs font-bold">
-            </div>
-            <div class="flex items-center justify-between border-b pb-2">
-              <span class="font-medium text-gray-700">🚌 교통비 (TCAT 리무진 + 지하철)</span>
-              <input type="number" id="input-transit" value="120000" oninput="updateBudgetCalc()" class="w-28 text-right px-2 py-1 border rounded text-xs font-bold">
-            </div>
-            <div class="flex items-center justify-between border-b pb-2">
-              <span class="font-medium text-gray-700">🛍️ 쇼핑 & 예비비</span>
-              <input type="number" id="input-shopping" value="300000" oninput="updateBudgetCalc()" class="w-28 text-right px-2 py-1 border rounded text-xs font-bold">
-            </div>
+          <div id="budget-items-container" class="space-y-3 text-sm"></div>
+
+          <!-- 새 예산 카테고리 추가 -->
+          <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
+            <input
+              type="text"
+              id="new-budget-label"
+              placeholder="항목명 (예: 기념품)"
+              class="flex-1 min-w-0 text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"
+            >
+            <input
+              type="number"
+              id="new-budget-amount"
+              placeholder="금액(원)"
+              class="w-28 text-right text-sm border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"
+            >
+            <button
+              type="button"
+              onclick="addBudgetItem()"
+              class="shrink-0 bg-[#E07A5F] hover:bg-[#c9694f] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors"
+            >+ 추가</button>
           </div>
 
           <!-- Total Calculation Display Card -->
@@ -552,6 +548,8 @@
     const db = firebase.firestore();
     // 모든 방문자가 같은 문서를 보고/고쳐서 체크 상태를 공유합니다.
     const checklistDocRef = db.collection('tokyoTrip').doc('checklist');
+    // 예산 항목도 같은 방식으로 Firestore에 저장/공유합니다.
+    const budgetDocRef = db.collection('tokyoTrip').doc('budget');
 
     let isApplyingRemoteUpdate = false; // Firestore→화면 반영 시 change 이벤트가 다시 저장을 트리거하지 않도록 방지
 
@@ -1061,33 +1059,126 @@
     }
 
     /* ======================================================== */
-    /* CHART.JS BUDGET ANALYTICS & CALCULATOR LOGIC             */
+    /* CHART.JS BUDGET ANALYTICS & CALCULATOR LOGIC (Firestore)  */
+    /* 항목 추가/삭제/금액 수정이 모두 실시간으로 공유 저장됩니다.       */
     /* ======================================================== */
+
+    let budgetItemsCache = {};
+    const budgetSaveTimers = {};
+
+    const budgetColors = ['#E07A5F', '#3D405B', '#F2CC8F', '#81B29A', '#6C757D', '#D8D0C5', '#9C89B8', '#5FA8D3'];
+
+    // Firestore에 예산 데이터가 아직 없을 때(최초 방문) 채워 넣을 기본 항목
+    const defaultBudgetItems = {
+      flight:   { label: '✈️ 항공권 (에어프레미아 2인)', amount: 700000, order: 1 },
+      hotel:    { label: '🏨 숙박비 (호텔 라이브맥스 4박)', amount: 480000, order: 2 },
+      food:     { label: '🍱 식비 & 디저트 카페 (4박 5일)', amount: 650000, order: 3 },
+      ticket:   { label: '🎟️ 티켓 (해리포터 & 도쿄타워)', amount: 180000, order: 4 },
+      transit:  { label: '🚌 교통비 (TCAT 리무진 + 지하철)', amount: 120000, order: 5 },
+      shopping: { label: '🛍️ 쇼핑 & 예비비', amount: 300000, order: 6 }
+    };
+
+    function renderBudgetItems(items) {
+      const container = document.getElementById('budget-items-container');
+      const ids = Object.keys(items).sort(function (a, b) {
+        return (items[a].order || 0) - (items[b].order || 0);
+      });
+
+      container.innerHTML = ids.map(function (id) {
+        const item = items[id];
+        return `
+          <div class="flex items-center justify-between gap-2 border-b pb-2 group">
+            <span class="font-medium text-gray-700 flex-1 truncate">${escapeHtml(item.label || '')}</span>
+            <input type="number" data-budget-id="${id}" value="${Number(item.amount) || 0}" class="budget-amount-input w-28 text-right px-2 py-1 border rounded text-xs font-bold">
+            <button type="button" data-delete-budget-id="${id}" title="삭제" class="delete-budget-item text-gray-300 hover:text-[#E07A5F] text-sm px-1 opacity-70 group-hover:opacity-100 transition-opacity">✕</button>
+          </div>
+        `;
+      }).join('');
+
+      // 금액 입력 → 화면은 즉시 반영, Firestore 저장은 0.5초 디바운스
+      container.querySelectorAll('.budget-amount-input').forEach(function (el) {
+        el.addEventListener('input', function () {
+          const id = el.dataset.budgetId;
+          const val = Number(el.value) || 0;
+          if (budgetItemsCache[id]) budgetItemsCache[id].amount = val;
+          updateBudgetSummary(budgetItemsCache);
+
+          clearTimeout(budgetSaveTimers[id]);
+          budgetSaveTimers[id] = setTimeout(function () {
+            budgetDocRef.set({ items: { [id]: { amount: val } } }, { merge: true })
+              .catch(function (e) { console.warn('예산 저장 실패:', e); });
+          }, 500);
+        });
+      });
+
+      // 삭제 버튼 → Firestore에서 해당 항목 제거
+      container.querySelectorAll('.delete-budget-item').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const id = btn.dataset.deleteBudgetId;
+          budgetDocRef.update({ [`items.${id}`]: firebase.firestore.FieldValue.delete() })
+            .catch(function (e) {
+              console.warn('예산 항목 삭제 실패:', e);
+              alert('항목 삭제에 실패했습니다.');
+            });
+        });
+      });
+    }
+
+    function updateBudgetSummary(items) {
+      const ids = Object.keys(items).sort(function (a, b) {
+        return (items[a].order || 0) - (items[b].order || 0);
+      });
+      const labels = ids.map(function (id) { return items[id].label || ''; });
+      const values = ids.map(function (id) { return Number(items[id].amount) || 0; });
+      const colors = ids.map(function (_, i) { return budgetColors[i % budgetColors.length]; });
+
+      const totalKRW = values.reduce(function (sum, v) { return sum + v; }, 0);
+      const totalJPY = Math.round(totalKRW / 9);
+
+      document.getElementById('total-krw').innerText = `${totalKRW.toLocaleString()} 원`;
+      document.getElementById('total-jpy').innerText = `약 ${totalJPY.toLocaleString()} 엔`;
+
+      if (budgetChartInstance) {
+        budgetChartInstance.data.labels = labels;
+        budgetChartInstance.data.datasets[0].data = values;
+        budgetChartInstance.data.datasets[0].backgroundColor = colors;
+        budgetChartInstance.update();
+      }
+    }
+
+    // 새 예산 카테고리 추가 버튼
+    function addBudgetItem() {
+      const labelInput = document.getElementById('new-budget-label');
+      const amountInput = document.getElementById('new-budget-amount');
+      const label = labelInput.value.trim();
+      const amount = Number(amountInput.value) || 0;
+      if (!label) return;
+
+      const id = 'custom_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      const order = Date.now();
+
+      budgetDocRef.set({ items: { [id]: { label: label, amount: amount, order: order } } }, { merge: true })
+        .then(function () {
+          labelInput.value = '';
+          amountInput.value = '';
+          labelInput.focus();
+        })
+        .catch(function (e) {
+          console.warn('예산 항목 추가 실패:', e);
+          alert('항목 추가에 실패했습니다. 인터넷 연결 또는 Firestore 설정을 확인해주세요.');
+        });
+    }
 
     function initBudgetChart() {
       const ctx = document.getElementById('budgetDoughnutChart').getContext('2d');
-      
-      const flight = Number(document.getElementById('input-flight').value) || 0;
-      const hotel = Number(document.getElementById('input-hotel').value) || 0;
-      const food = Number(document.getElementById('input-food').value) || 0;
-      const ticket = Number(document.getElementById('input-ticket').value) || 0;
-      const transit = Number(document.getElementById('input-transit').value) || 0;
-      const shopping = Number(document.getElementById('input-shopping').value) || 0;
 
       budgetChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: ['항공권', '숙박비', '식비/카페', '티켓/입장료', '교통비', '쇼핑/예비'],
+          labels: [],
           datasets: [{
-            data: [flight, hotel, food, ticket, transit, shopping],
-            backgroundColor: [
-              '#E07A5F', // Coral
-              '#3D405B', // Slate Navy
-              '#F2CC8F', // Gold
-              '#81B29A', // Sage
-              '#6C757D', // Grey
-              '#D8D0C5'  // Neutral Warm
-            ],
+            data: [],
+            backgroundColor: [],
             borderWidth: 2,
             borderColor: '#ffffff'
           }]
@@ -1114,26 +1205,23 @@
           }
         }
       });
-    }
 
-    function updateBudgetCalc() {
-      const flight = Number(document.getElementById('input-flight').value) || 0;
-      const hotel = Number(document.getElementById('input-hotel').value) || 0;
-      const food = Number(document.getElementById('input-food').value) || 0;
-      const ticket = Number(document.getElementById('input-ticket').value) || 0;
-      const transit = Number(document.getElementById('input-transit').value) || 0;
-      const shopping = Number(document.getElementById('input-shopping').value) || 0;
-
-      const totalKRW = flight + hotel + food + ticket + transit + shopping;
-      const totalJPY = Math.round(totalKRW / 9);
-
-      document.getElementById('total-krw').innerText = `${totalKRW.toLocaleString()} 원`;
-      document.getElementById('total-jpy').innerText = `약 ${totalJPY.toLocaleString()} 엔`;
-
-      if (budgetChartInstance) {
-        budgetChartInstance.data.datasets[0].data = [flight, hotel, food, ticket, transit, shopping];
-        budgetChartInstance.update();
-      }
+      // Firestore 문서가 바뀔 때마다(항목 추가/삭제/금액 수정 포함) 실시간으로 화면 갱신
+      budgetDocRef.onSnapshot(function (docSnap) {
+        if (!docSnap.exists) {
+          // 최초 방문: 기본 예산 항목으로 문서를 만들어 둡니다. (이후 onSnapshot이 다시 호출됨)
+          budgetDocRef.set({ items: defaultBudgetItems }).catch(function (e) {
+            console.warn('기본 예산 데이터 생성 실패:', e);
+          });
+          return;
+        }
+        const data = docSnap.data();
+        budgetItemsCache = data.items || {};
+        renderBudgetItems(budgetItemsCache);
+        updateBudgetSummary(budgetItemsCache);
+      }, function (err) {
+        console.warn('예산 실시간 동기화 오류:', err);
+      });
     }
   </script>
 </body>
