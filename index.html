@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>✈️ 도쿄 4박 5일 커플 로맨틱 & 미식 대시보드</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .chart-container { position: relative; width: 100%; max-width: 500px; margin: auto; height: 280px; }
@@ -16,7 +18,7 @@
 </head>
 <body class="bg-[#FAF7F2] text-[#2D2B2A] font-sans min-h-screen">
 
-  <!-- HEADER -->
+  <!-- NAVIGATION HEADER -->
   <header class="sticky top-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E8E1D7] px-4 py-3 shadow-sm">
     <div class="max-w-6xl mx-auto flex items-center justify-between">
       <div class="flex items-center space-x-2">
@@ -37,9 +39,10 @@
     </div>
   </header>
 
+  <!-- MAIN CONTAINER -->
   <main class="max-w-6xl mx-auto px-4 py-6">
 
-    <!-- 1. OVERVIEW -->
+    <!-- OVERVIEW TAB -->
     <section id="sec-overview" class="tab-content space-y-6">
       <div class="bg-white p-6 rounded-2xl border border-[#E8E1D7] flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
@@ -75,7 +78,7 @@
       </div>
     </section>
 
-    <!-- 2. ITINERARY -->
+    <!-- ITINERARY TAB -->
     <section id="sec-itinerary" class="tab-content hidden space-y-4">
       <div class="bg-white p-4 rounded-2xl border border-[#E8E1D7]">
         <h2 class="text-xl font-bold text-[#3D405B] mb-3">🗓️ 일자별 일정</h2>
@@ -84,7 +87,7 @@
       <div id="itinerary-timeline" class="space-y-3"></div>
     </section>
 
-    <!-- 3. GOURMET -->
+    <!-- GOURMET TAB -->
     <section id="sec-gourmet" class="tab-content hidden space-y-4">
       <div class="bg-white p-4 rounded-2xl border border-[#E8E1D7] flex flex-col sm:flex-row gap-3">
         <input type="text" id="gourmet-search" oninput="filterGourmet()" placeholder="식당, 메뉴, 지역 검색..." class="flex-grow p-2 text-xs border rounded-xl bg-[#FAF7F2]">
@@ -100,7 +103,7 @@
       <div id="gourmet-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
 
-    <!-- 4. FLASHCARDS -->
+    <!-- FLASHCARDS TAB -->
     <section id="sec-flashcards" class="tab-content hidden space-y-4">
       <div class="max-w-md mx-auto space-y-4">
         <div class="flex justify-between items-center text-xs text-gray-500">
@@ -133,7 +136,7 @@
       </div>
     </section>
 
-    <!-- 5. BUDGET -->
+    <!-- BUDGET TAB -->
     <section id="sec-budget" class="tab-content hidden space-y-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-white p-4 rounded-2xl border border-[#E8E1D7]">
@@ -154,28 +157,29 @@
       </div>
     </section>
 
-    <!-- 6. CHECKLIST -->
+    <!-- CHECKLIST TAB -->
     <section id="sec-checklist" class="tab-content hidden space-y-4">
       <div class="bg-white p-6 rounded-2xl border border-[#E8E1D7] space-y-3">
         <h3 class="font-bold text-base text-[#3D405B]">✅ 준비물 체크리스트</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-          <label class="flex items-center space-x-2"><input type="checkbox" checked> <span>여권 (6개월 이상 남아있음)</span></label>
-          <label class="flex items-center space-x-2"><input type="checkbox" checked> <span>Visit Japan Web QR 등록</span></label>
-          <label class="flex items-center space-x-2"><input type="checkbox"> <span>에어프레미아 E-티켓</span></label>
-          <label class="flex items-center space-x-2"><input type="checkbox"> <span>해리포터 / 도쿄타워 티켓</span></label>
-          <label class="flex items-center space-x-2"><input type="checkbox"> <span>eSIM / 와이파이 도시락</span></label>
-          <label class="flex items-center space-x-2"><input type="checkbox"> <span>엔화 환전 & 트래블 카드</span></label>
+          <label class="flex items-center space-x-2"><input type="checkbox" checked onchange="saveChecklist()"> <span>여권 (6개월 이상 남아있음)</span></label>
+          <label class="flex items-center space-x-2"><input type="checkbox" checked onchange="saveChecklist()"> <span>Visit Japan Web QR 등록</span></label>
+          <label class="flex items-center space-x-2"><input type="checkbox" onchange="saveChecklist()"> <span>에어프레미아 E-티켓</span></label>
+          <label class="flex items-center space-x-2"><input type="checkbox" onchange="saveChecklist()"> <span>해리포터 / 도쿄타워 티켓</span></label>
+          <label class="flex items-center space-x-2"><input type="checkbox" onchange="saveChecklist()"> <span>eSIM / 와이파이 도시락</span></label>
+          <label class="flex items-center space-x-2"><input type="checkbox" onchange="saveChecklist()"> <span>엔화 환전 & 트래블 카드</span></label>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- FIREBASE MODULE -->
+  <!-- FIREBASE & MAIN JAVASCRIPT LOGIC -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // 1. Firebase 초기화
     const firebaseConfig = {
       apiKey: "AIzaSyCIxdpE0ogvq2oCQ4YR2zABhqUXJ_rNK6Y",
       authDomain: "ssss-56bb0.firebaseapp.com",
@@ -189,30 +193,39 @@
     const db = getFirestore(app);
     const docRef = doc(db, "travel_data", "tokyo_2026");
 
+    // 2. 실시간 동기화
     onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        console.log("실시간 데이터 로드 성공:", data);
+        if (data.budget) {
+          if (data.budget.flight) document.getElementById('in-flight').value = data.budget.flight;
+          if (data.budget.hotel) document.getElementById('in-hotel').value = data.budget.hotel;
+          if (data.budget.food) document.getElementById('in-food').value = data.budget.food;
+          if (data.budget.ticket) document.getElementById('in-ticket').value = data.budget.ticket;
+          if (data.budget.transit) document.getElementById('in-transit').value = data.budget.transit;
+          window.calcBudget(false);
+        }
       }
     });
 
+    // 3. 데이터 저장 함수
     window.autoSaveData = async function(updatedData) {
       try {
         await setDoc(docRef, updatedData, { merge: true });
-        console.log("자동 저장 완료!");
       } catch (e) {
         console.error("저장 실패:", e);
       }
     };
   </script>
 
-  <!-- MAIN APP SCRIPT -->
   <script>
+    // TAB SWITCHING
     function switchTab(tab) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       document.getElementById(`sec-${tab}`).classList.remove('hidden');
     }
 
+    // ITINERARY DATA
     const days = [
       { day: 1, label: 'DAY 1 (10/29 목)', items: ['08:45 인천 출발 ✈️', '11:15 나리타 도착 & TCAT 이동', '13:30 츠지한 점심', '15:00 호텔 체크인', '17:00 시부야 야경 & 토리카츠 저녁'] },
       { day: 2, label: 'DAY 2 (10/30 금)', items: ['10:00 마루노우치 브런치', '12:00 하라주쿠/오모테산도 쇼핑', '16:00 시바 공원 스냅', '18:00 도쿄 타워 야경'] },
@@ -240,6 +253,7 @@
         </div>`;
     }
 
+    // GOURMET DATA
     const gourmetList = [
       { name: '츠지한', area: '긴자', cat: '식사', desc: '도쿄 대표 카이센동 맛집' },
       { name: '토리카츠', area: '시부야', cat: '식사', desc: '가성비 훌륭한 골목 카츠 전문점' },
@@ -266,6 +280,7 @@
       `).join('');
     }
 
+    // FLASHCARDS DATA
     const cards = [
       { front: "이걸로 주세요.", back: "Kore o kudasai", sub: "これをください" },
       { front: "추천 메뉴가 무엇인가요?", back: "Osusume wa nandesuka?", sub: "おすすめは何ですか？" },
@@ -291,6 +306,7 @@
       speechSynthesis.speak(u);
     }
 
+    // BUDGET CHART & CALC
     let budgetChart;
     function initChart() {
       const ctx = document.getElementById('budgetChart').getContext('2d');
@@ -304,7 +320,7 @@
       });
     }
 
-    function calcBudget() {
+    function calcBudget(save = true) {
       const f = Number(document.getElementById('in-flight').value) || 0;
       const h = Number(document.getElementById('in-hotel').value) || 0;
       const fd = Number(document.getElementById('in-food').value) || 0;
@@ -312,10 +328,27 @@
       const tr = Number(document.getElementById('in-transit').value) || 0;
       const total = f + h + fd + t + tr;
       document.getElementById('tot-krw').innerText = `${total.toLocaleString()} 원`;
-      budgetChart.data.datasets[0].data = [f, h, fd, t, tr];
-      budgetChart.update();
+      
+      if (budgetChart) {
+        budgetChart.data.datasets[0].data = [f, h, fd, t, tr];
+        budgetChart.update();
+      }
+
+      if (save && window.autoSaveData) {
+        window.autoSaveData({
+          budget: { flight: f, hotel: h, food: fd, ticket: t, transit: tr }
+        });
+      }
     }
 
+    function saveChecklist() {
+      const checks = Array.from(document.querySelectorAll('#sec-checklist input[type="checkbox"]')).map(c => c.checked);
+      if (window.autoSaveData) {
+        window.autoSaveData({ checklist: checks });
+      }
+    }
+
+    // INIT
     window.onload = () => {
       renderDays();
       filterGourmet();
