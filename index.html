@@ -472,6 +472,24 @@
               <span class="text-gray-800">엔화 환전 및 트래블로그/트래블월렛 카드의 준비</span>
             </label>
           </div>
+
+          <!-- 사용자가 직접 추가한 커스텀 체크리스트 항목이 여기 렌더링됩니다 -->
+          <div id="custom-checklist-items" class="space-y-1 text-sm"></div>
+
+          <!-- 새 항목 추가 입력창 -->
+          <div class="flex items-center space-x-2 pt-3 mt-1 border-t border-gray-100">
+            <input
+              type="text"
+              id="new-checklist-input"
+              placeholder="새 준비물을 입력하고 Enter 또는 추가 버튼"
+              class="flex-1 text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"
+            >
+            <button
+              type="button"
+              onclick="addChecklistItem()"
+              class="shrink-0 bg-[#E07A5F] hover:bg-[#c9694f] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors"
+            >+ 추가</button>
+          </div>
         </div>
 
         <!-- TCAT & Transit Tips Card -->
@@ -537,6 +555,78 @@
 
     let isApplyingRemoteUpdate = false; // Firestore→화면 반영 시 change 이벤트가 다시 저장을 트리거하지 않도록 방지
 
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // 사용자가 직접 추가한 커스텀 항목들을 화면에 그려주는 함수
+    function renderCustomItems(customItems) {
+      const container = document.getElementById('custom-checklist-items');
+      const ids = Object.keys(customItems || {});
+
+      if (ids.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = ids.map(function (id) {
+        const item = customItems[id] || {};
+        return `
+          <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F2] transition-colors group">
+            <input type="checkbox" ${item.checked ? 'checked' : ''} data-custom-id="${id}" class="custom-checklist-item w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
+            <span class="text-gray-800 flex-1">${escapeHtml(item.label || '')}</span>
+            <button type="button" data-delete-id="${id}" title="삭제" class="delete-custom-item text-gray-300 hover:text-[#E07A5F] text-sm px-1 opacity-70 group-hover:opacity-100 transition-opacity">✕</button>
+          </label>
+        `;
+      }).join('');
+
+      // 체크 상태 변경 → Firestore 저장
+      container.querySelectorAll('.custom-checklist-item').forEach(function (el) {
+        el.addEventListener('change', function () {
+          if (isApplyingRemoteUpdate) return;
+          const id = el.dataset.customId;
+          checklistDocRef.set({ customItems: { [id]: { checked: el.checked } } }, { merge: true })
+            .catch(function (e) {
+              console.warn('체크리스트 저장 실패:', e);
+              alert('체크 상태 저장에 실패했습니다. 인터넷 연결 또는 Firestore 설정을 확인해주세요.');
+            });
+        });
+      });
+
+      // 삭제 버튼 → Firestore에서 해당 항목 제거
+      container.querySelectorAll('.delete-custom-item').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const id = btn.dataset.deleteId;
+          checklistDocRef.update({ [`customItems.${id}`]: firebase.firestore.FieldValue.delete() })
+            .catch(function (e) {
+              console.warn('항목 삭제 실패:', e);
+              alert('항목 삭제에 실패했습니다.');
+            });
+        });
+      });
+    }
+
+    // 새 준비물 추가 버튼/Enter 입력 시 호출
+    function addChecklistItem() {
+      const input = document.getElementById('new-checklist-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const id = 'custom_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+      checklistDocRef.set({ customItems: { [id]: { label: text, checked: false } } }, { merge: true })
+        .then(function () {
+          input.value = '';
+          input.focus();
+        })
+        .catch(function (e) {
+          console.warn('항목 추가 실패:', e);
+          alert('항목 추가에 실패했습니다. 인터넷 연결 또는 Firestore 설정을 확인해주세요.');
+        });
+    }
+
     function initChecklist() {
       const items = document.querySelectorAll('.checklist-item');
 
@@ -553,6 +643,17 @@
         });
       });
 
+      // Enter 키로도 새 항목 추가
+      const newItemInput = document.getElementById('new-checklist-input');
+      if (newItemInput) {
+        newItemInput.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            addChecklistItem();
+          }
+        });
+      }
+
       // Firestore 문서가 바뀔 때마다(자신의 저장 포함, 상대방의 저장 포함) 실시간으로 화면에 반영
       checklistDocRef.onSnapshot(function (docSnap) {
         const data = docSnap.exists ? docSnap.data() : {};
@@ -563,6 +664,7 @@
             el.checked = data[id];
           }
         });
+        renderCustomItems(data.customItems);
         isApplyingRemoteUpdate = false;
       }, function (err) {
         console.warn('실시간 동기화 오류:', err);
