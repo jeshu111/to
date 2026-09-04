@@ -26,6 +26,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase (Firestore) CDN — 체크리스트 실시간 공유 동기화용 -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <style>
     /* Custom Responsive Chart Container Styling */
@@ -437,35 +440,35 @@
           
           <div class="space-y-3 text-sm">
             <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F2] transition-colors">
-              <input type="checkbox" checked class="w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
+              <input type="checkbox" checked data-checklist-id="passport" class="checklist-item w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
               <span class="text-gray-800">여권 (유효기간 6개월 이상 확인)</span>
             </label>
             <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F2] transition-colors">
-              <input type="checkbox" checked class="w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
+              <input type="checkbox" checked data-checklist-id="vjw" class="checklist-item w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
               <span class="text-gray-800">Visit Japan Web 등록 (입국/세관 QR 생성)</span>
             </label>
             <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F2] transition-colors">
-              <input type="checkbox" class="w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
+              <input type="checkbox" data-checklist-id="eticket" class="checklist-item w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
               <span class="text-gray-800">에어프레미아 E-티켓 (YP731 / YP732) 저장</span>
             </label>
             <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F2] transition-colors">
-              <input type="checkbox" class="w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
+              <input type="checkbox" data-checklist-id="hp-studio" class="checklist-item w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
               <span class="text-gray-800">워너 브라더스 해리포터 스튜디오 티켓 바코드</span>
             </label>
             <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F2] transition-colors">
-              <input type="checkbox" class="w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
+              <input type="checkbox" data-checklist-id="tokyo-tower" class="checklist-item w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
               <span class="text-gray-800">도쿄 타워 메인 전망대 입장권</span>
             </label>
             <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F2] transition-colors">
-              <input type="checkbox" class="w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
+              <input type="checkbox" data-checklist-id="restaurant-resv" class="checklist-item w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
               <span class="text-gray-800">예약 식당 확인 (Sukiyaki Asai, KUROGI 등)</span>
             </label>
             <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F2] transition-colors">
-              <input type="checkbox" class="w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
+              <input type="checkbox" data-checklist-id="esim" class="checklist-item w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
               <span class="text-gray-800">eSIM 또는 포켓 와이파이 신청</span>
             </label>
             <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F2] transition-colors">
-              <input type="checkbox" class="w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
+              <input type="checkbox" data-checklist-id="currency" class="checklist-item w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
               <span class="text-gray-800">엔화 환전 및 트래블로그/트래블월렛 카드의 준비</span>
             </label>
           </div>
@@ -512,6 +515,62 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
+    /* ======================================================== */
+    /* CHECKLIST PERSISTENCE (Firebase Firestore, 실시간 공유)     */
+    /* 두 사람이 각자 폰/PC에서 봐도 체크 상태가 실시간으로 동기화됩니다. */
+    /* ======================================================== */
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCIxdpE0ogvq2oCQ4YR2zABhqUXJ_rNK6Y",
+      authDomain: "ssss-56bb0.firebaseapp.com",
+      projectId: "ssss-56bb0",
+      storageBucket: "ssss-56bb0.firebasestorage.app",
+      messagingSenderId: "1075238133078",
+      appId: "1:1075238133078:web:2e99e2b13f242920facaf7",
+      measurementId: "G-3BJQV8MH63"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    // 모든 방문자가 같은 문서를 보고/고쳐서 체크 상태를 공유합니다.
+    const checklistDocRef = db.collection('tokyoTrip').doc('checklist');
+
+    let isApplyingRemoteUpdate = false; // Firestore→화면 반영 시 change 이벤트가 다시 저장을 트리거하지 않도록 방지
+
+    function initChecklist() {
+      const items = document.querySelectorAll('.checklist-item');
+
+      // 사용자가 체크박스를 클릭하면 Firestore에 저장
+      items.forEach(function (el) {
+        el.addEventListener('change', function () {
+          if (isApplyingRemoteUpdate) return;
+          const id = el.dataset.checklistId;
+          checklistDocRef.set({ [id]: el.checked }, { merge: true })
+            .catch(function (e) {
+              console.warn('체크리스트 저장 실패:', e);
+              alert('체크 상태 저장에 실패했습니다. 인터넷 연결 또는 Firestore 설정을 확인해주세요.');
+            });
+        });
+      });
+
+      // Firestore 문서가 바뀔 때마다(자신의 저장 포함, 상대방의 저장 포함) 실시간으로 화면에 반영
+      checklistDocRef.onSnapshot(function (docSnap) {
+        const data = docSnap.exists ? docSnap.data() : {};
+        isApplyingRemoteUpdate = true;
+        items.forEach(function (el) {
+          const id = el.dataset.checklistId;
+          if (Object.prototype.hasOwnProperty.call(data, id)) {
+            el.checked = data[id];
+          }
+        });
+        isApplyingRemoteUpdate = false;
+      }, function (err) {
+        console.warn('실시간 동기화 오류:', err);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', initChecklist);
+
     /* ======================================================== */
     /* DATA STORAGE FOR ITINERARY & GOURMET                     */
     /* ======================================================== */
