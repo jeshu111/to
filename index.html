@@ -4,12 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Firebase 실시간 업로드 예제</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input { padding: 8px; width: 250px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    ul { margin-top: 15px; }
+    li { margin-bottom: 5px; }
+  </style>
 </head>
 <body>
 
   <h2>Firebase 실시간 데이터 업로드</h2>
   
-  <!-- 데이터 입력 폼 -->
   <div>
     <input type="text" id="userInput" placeholder="할 일이나 메시지 입력">
     <button id="addBtn">업로드</button>
@@ -18,7 +24,7 @@
   <h3>실시간 데이터 목록</h3>
   <ul id="dataList"></ul>
 
-  <!-- Firebase SDK 모듈 불러오기 (v10 이상 기준) -->
+  <!-- Firebase SDK (v10 모듈) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
@@ -31,7 +37,6 @@
       orderBy 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // 전달해주신 Firebase 설정
     const firebaseConfig = {
       apiKey: "AIzaSyCIxdpE0ogvq2oCQ4YR2zABhqUXJ_rNK6Y",
       authDomain: "ssss-56bb0.firebaseapp.com",
@@ -42,42 +47,35 @@
       measurementId: "G-3BJQV8MH63"
     };
 
-    // 1. Firebase 앱 및 Firestore 초기화
+    // Firebase 초기화
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
-    // 컬렉션(데이터 집합) 참조 설정
     const messagesCollection = collection(db, "messages");
 
-    // DOM 요소
     const userInput = document.getElementById("userInput");
     const addBtn = document.getElementById("addBtn");
     const dataList = document.getElementById("dataList");
 
-    // 2. 실시간 데이터 업로드 (데이터 추가)
+    // 실시간 데이터 추가
     addBtn.addEventListener("click", async () => {
       const text = userInput.value.trim();
-      if (text === "") return;
+      if (!text) return;
 
       try {
         await addDoc(messagesCollection, {
           text: text,
-          createdAt: serverTimestamp() // 작성 시간 자동 생성
+          createdAt: serverTimestamp()
         });
-        userInput.value = ""; // 입력창 초기화
+        userInput.value = "";
       } catch (error) {
-        console.error("데이터 업로드 중 에러 발생:", error);
+        console.error("업로드 에러:", error);
       }
     });
 
-    // 3. 실시간 데이터 수신 (onSnapshot)
-    // 시간순(createdAt 기준 오름차순) 정렬 쿼리 작성
+    // 실시간 데이터 수신 리스너
     const q = query(messagesCollection, orderBy("createdAt", "asc"));
-
-    // 데이터베이스에 변경사항이 발생할 때마다 자동으로 실행되는 리스너
     onSnapshot(q, (snapshot) => {
-      dataList.innerHTML = ""; // 기존 목록 초기화
-
+      dataList.innerHTML = "";
       snapshot.forEach((doc) => {
         const data = doc.data();
         const li = document.createElement("li");
