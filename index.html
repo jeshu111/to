@@ -3,358 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>✈️ 도쿄 4박 5일 커플 로맨틱 & 미식 대시보드</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    .chart-container { position: relative; width: 100%; max-width: 500px; margin: auto; height: 280px; }
-    .perspective-1000 { perspective: 1000px; }
-    .transform-style-3d { transform-style: preserve-3d; transition: transform 0.5s; }
-    .backface-hidden { backface-visibility: hidden; }
-    .rotate-y-180 { transform: rotateY(180deg); }
-  </style>
+  <title>Firebase 실시간 업로드 예제</title>
 </head>
-<body class="bg-[#FAF7F2] text-[#2D2B2A] font-sans min-h-screen">
+<body>
 
-  <!-- NAVIGATION HEADER -->
-  <header class="sticky top-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E8E1D7] px-4 py-3 shadow-sm">
-    <div class="max-w-6xl mx-auto flex items-center justify-between">
-      <div class="flex items-center space-x-2">
-        <span class="text-2xl">✈️</span>
-        <div>
-          <h1 class="font-bold text-base sm:text-lg text-[#3D405B]">도쿄 커플 여행 대시보드</h1>
-          <p class="text-xs text-[#E07A5F]">2026.10.29 (목) ~ 11.02 (월) | 4박 5일</p>
-        </div>
-      </div>
-      <nav class="hidden md:flex space-x-2">
-        <button onclick="switchTab('overview')" class="nav-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-[#F2EAE1] text-[#E07A5F]">요약</button>
-        <button onclick="switchTab('itinerary')" class="nav-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-600 hover:bg-[#F2EAE1]">일정</button>
-        <button onclick="switchTab('gourmet')" class="nav-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-600 hover:bg-[#F2EAE1]">미식 지도</button>
-        <button onclick="switchTab('flashcards')" class="nav-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-600 hover:bg-[#F2EAE1]">플래시카드</button>
-        <button onclick="switchTab('budget')" class="nav-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-600 hover:bg-[#F2EAE1]">예산</button>
-        <button onclick="switchTab('checklist')" class="nav-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-600 hover:bg-[#F2EAE1]">준비물</button>
-      </nav>
-    </div>
-  </header>
+  <h2>Firebase 실시간 데이터 업로드</h2>
+  
+  <!-- 데이터 입력 폼 -->
+  <div>
+    <input type="text" id="userInput" placeholder="할 일이나 메시지 입력">
+    <button id="addBtn">업로드</button>
+  </div>
 
-  <!-- MAIN CONTAINER -->
-  <main class="max-w-6xl mx-auto px-4 py-6">
+  <h3>실시간 데이터 목록</h3>
+  <ul id="dataList"></ul>
 
-    <!-- OVERVIEW TAB -->
-    <section id="sec-overview" class="tab-content space-y-6">
-      <div class="bg-white p-6 rounded-2xl border border-[#E8E1D7] flex flex-col md:flex-row justify-between items-center gap-4">
-        <div>
-          <span class="bg-[#F2CC8F]/40 text-[#8F5B00] px-3 py-1 rounded-full text-xs font-bold">💕 도쿄 4박 5일 커플 여행</span>
-          <h2 class="text-2xl font-extrabold text-[#3D405B] mt-2">도쿄 로맨틱 미식 투어</h2>
-          <p class="text-xs sm:text-sm text-gray-500 mt-1">에어프레미아 항공편 & TCAT 근처 거점(호텔 라이브맥스) 중심의 완벽 일정</p>
-        </div>
-        <div class="flex gap-3 text-center shrink-0">
-          <div class="bg-[#FAF7F2] p-3 rounded-xl border border-[#E8E1D7] text-xs">
-            <span class="text-[#81B29A] font-bold block">출국 YP731</span> 10/29 08:45
-          </div>
-          <div class="bg-[#FAF7F2] p-3 rounded-xl border border-[#E8E1D7] text-xs">
-            <span class="text-[#E07A5F] font-bold block">귀국 YP732</span> 11/02 12:30
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-        <div class="bg-white p-4 rounded-xl border border-[#E8E1D7]">
-          <h3 class="font-bold text-sm text-[#3D405B] mb-2">🏨 숙소 정보</h3>
-          <p class="text-gray-600">호텔 라이브맥스 니혼바시 하코자키</p>
-          <p class="text-gray-400 mt-1">스이텐구마에/닌교초역 도보 가능, TCAT 리무진 버스 바로 앞</p>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-[#E8E1D7]">
-          <h3 class="font-bold text-sm text-[#3D405B] mb-2">🚇 교통 메리트</h3>
-          <p class="text-gray-600">한조몬선, 히비야선, 아사쿠사선 이용 최적화</p>
-          <p class="text-gray-400 mt-1">시부야/긴자/아사쿠사 직통 환승 최저</p>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-[#E8E1D7]">
-          <h3 class="font-bold text-sm text-[#3D405B] mb-2">⭐ 핵심 하이라이트</h3>
-          <p class="text-gray-600">도쿄 타워 야경, 해리포터 스튜디오, 고구마 디저트, 스키야키 미식</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ITINERARY TAB -->
-    <section id="sec-itinerary" class="tab-content hidden space-y-4">
-      <div class="bg-white p-4 rounded-2xl border border-[#E8E1D7]">
-        <h2 class="text-xl font-bold text-[#3D405B] mb-3">🗓️ 일자별 일정</h2>
-        <div class="flex flex-wrap gap-2" id="day-buttons"></div>
-      </div>
-      <div id="itinerary-timeline" class="space-y-3"></div>
-    </section>
-
-    <!-- GOURMET TAB -->
-    <section id="sec-gourmet" class="tab-content hidden space-y-4">
-      <div class="bg-white p-4 rounded-2xl border border-[#E8E1D7] flex flex-col sm:flex-row gap-3">
-        <input type="text" id="gourmet-search" oninput="filterGourmet()" placeholder="식당, 메뉴, 지역 검색..." class="flex-grow p-2 text-xs border rounded-xl bg-[#FAF7F2]">
-        <select id="gourmet-area" onchange="filterGourmet()" class="p-2 text-xs border rounded-xl bg-[#FAF7F2]">
-          <option value="ALL">전체 지역</option>
-          <option value="시부야">시부야/하라주쿠</option>
-          <option value="긴자">긴자/마루노우치</option>
-          <option value="아사쿠사">아사쿠사</option>
-          <option value="신주쿠">신주쿠/도시마엔</option>
-          <option value="우에노">우에노</option>
-        </select>
-      </div>
-      <div id="gourmet-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </section>
-
-    <!-- FLASHCARDS TAB -->
-    <section id="sec-flashcards" class="tab-content hidden space-y-4">
-      <div class="max-w-md mx-auto space-y-4">
-        <div class="flex justify-between items-center text-xs text-gray-500">
-          <span>🔊 음성 지원 카드</span>
-          <span id="fc-count">1 / 5</span>
-        </div>
-        <div class="perspective-1000 w-full h-64">
-          <div id="fc-element" onclick="this.classList.toggle('rotate-y-180')" class="transform-style-3d relative w-full h-full cursor-pointer shadow-md rounded-2xl bg-white border border-[#E8E1D7]">
-            <div class="backface-hidden absolute inset-0 p-6 flex flex-col justify-between">
-              <span class="text-xs font-bold text-[#E07A5F]">질문 / 상황</span>
-              <p id="fc-front" class="text-lg font-bold text-center my-auto text-[#3D405B]"></p>
-              <span class="text-xs text-center text-gray-400">클릭해서 정답 확인 🔄</span>
-            </div>
-            <div class="backface-hidden rotate-y-180 absolute inset-0 p-6 flex flex-col justify-between bg-[#3D405B] text-white rounded-2xl">
-              <div class="flex justify-between items-center">
-                <span class="text-xs font-bold text-[#F2CC8F]">표현</span>
-                <button onclick="event.stopPropagation(); speakJP();" class="text-xs bg-[#E07A5F] px-2 py-1 rounded">🔊 발음</button>
-              </div>
-              <div class="text-center my-auto">
-                <p id="fc-back" class="text-xl font-bold text-[#F2CC8F]"></p>
-                <p id="fc-sub" class="text-sm text-gray-300 mt-1"></p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="flex justify-between">
-          <button onclick="prevCard()" class="px-4 py-2 bg-white text-xs font-bold border rounded-xl">이전</button>
-          <button onclick="nextCard()" class="px-4 py-2 bg-[#E07A5F] text-white text-xs font-bold rounded-xl">다음</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- BUDGET TAB -->
-    <section id="sec-budget" class="tab-content hidden space-y-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white p-4 rounded-2xl border border-[#E8E1D7]">
-          <h3 class="font-bold text-sm text-[#3D405B] text-center mb-2">📊 예산 비중</h3>
-          <div class="chart-container"><canvas id="budgetChart"></canvas></div>
-        </div>
-        <div class="bg-white p-4 rounded-2xl border border-[#E8E1D7] space-y-3 text-xs">
-          <h3 class="font-bold text-sm text-[#3D405B]">📝 예상 지출 (2인 기준)</h3>
-          <div class="flex justify-between items-center"><span>✈️ 항공권</span><input type="number" id="in-flight" value="700000" oninput="calcBudget()" class="w-24 text-right border rounded p-1"></div>
-          <div class="flex justify-between items-center"><span>🏨 숙박비</span><input type="number" id="in-hotel" value="480000" oninput="calcBudget()" class="w-24 text-right border rounded p-1"></div>
-          <div class="flex justify-between items-center"><span>🍱 식비/카페</span><input type="number" id="in-food" value="650000" oninput="calcBudget()" class="w-24 text-right border rounded p-1"></div>
-          <div class="flex justify-between items-center"><span>🎟️ 티켓</span><input type="number" id="in-ticket" value="180000" oninput="calcBudget()" class="w-24 text-right border rounded p-1"></div>
-          <div class="flex justify-between items-center"><span>🚌 교통비</span><input type="number" id="in-transit" value="120000" oninput="calcBudget()" class="w-24 text-right border rounded p-1"></div>
-          <div class="bg-[#FAF7F2] p-3 rounded-xl border flex justify-between items-center font-bold">
-            <span>합계 (KRW)</span><span id="tot-krw" class="text-[#E07A5F] text-sm">2,130,000 원</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CHECKLIST TAB -->
-    <section id="sec-checklist" class="tab-content hidden space-y-4">
-      <div class="bg-white p-6 rounded-2xl border border-[#E8E1D7] space-y-3">
-        <h3 class="font-bold text-base text-[#3D405B]">✅ 준비물 체크리스트</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-          <label class="flex items-center space-x-2"><input type="checkbox" checked onchange="saveChecklist()"> <span>여권 (6개월 이상 남아있음)</span></label>
-          <label class="flex items-center space-x-2"><input type="checkbox" checked onchange="saveChecklist()"> <span>Visit Japan Web QR 등록</span></label>
-          <label class="flex items-center space-x-2"><input type="checkbox" onchange="saveChecklist()"> <span>에어프레미아 E-티켓</span></label>
-          <label class="flex items-center space-x-2"><input type="checkbox" onchange="saveChecklist()"> <span>해리포터 / 도쿄타워 티켓</span></label>
-          <label class="flex items-center space-x-2"><input type="checkbox" onchange="saveChecklist()"> <span>eSIM / 와이파이 도시락</span></label>
-          <label class="flex items-center space-x-2"><input type="checkbox" onchange="saveChecklist()"> <span>엔화 환전 & 트래블 카드</span></label>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- FIREBASE & MAIN JAVASCRIPT LOGIC -->
+  <!-- Firebase SDK 모듈 불러오기 (v10 이상 기준) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      onSnapshot, 
+      serverTimestamp, 
+      query, 
+      orderBy 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // 1. Firebase 초기화
+    // 전달해주신 Firebase 설정
     const firebaseConfig = {
       apiKey: "AIzaSyCIxdpE0ogvq2oCQ4YR2zABhqUXJ_rNK6Y",
       authDomain: "ssss-56bb0.firebaseapp.com",
       projectId: "ssss-56bb0",
       storageBucket: "ssss-56bb0.firebasestorage.app",
       messagingSenderId: "1075238133078",
-      appId: "1:1075238133078:web:2e99e2b13f242920facaf7"
+      appId: "1:1075238133078:web:2e99e2b13f242920facaf7",
+      measurementId: "G-3BJQV8MH63"
     };
 
+    // 1. Firebase 앱 및 Firestore 초기화
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const docRef = doc(db, "travel_data", "tokyo_2026");
 
-    // 2. 실시간 동기화
-    onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.budget) {
-          if (data.budget.flight) document.getElementById('in-flight').value = data.budget.flight;
-          if (data.budget.hotel) document.getElementById('in-hotel').value = data.budget.hotel;
-          if (data.budget.food) document.getElementById('in-food').value = data.budget.food;
-          if (data.budget.ticket) document.getElementById('in-ticket').value = data.budget.ticket;
-          if (data.budget.transit) document.getElementById('in-transit').value = data.budget.transit;
-          window.calcBudget(false);
-        }
+    // 컬렉션(데이터 집합) 참조 설정
+    const messagesCollection = collection(db, "messages");
+
+    // DOM 요소
+    const userInput = document.getElementById("userInput");
+    const addBtn = document.getElementById("addBtn");
+    const dataList = document.getElementById("dataList");
+
+    // 2. 실시간 데이터 업로드 (데이터 추가)
+    addBtn.addEventListener("click", async () => {
+      const text = userInput.value.trim();
+      if (text === "") return;
+
+      try {
+        await addDoc(messagesCollection, {
+          text: text,
+          createdAt: serverTimestamp() // 작성 시간 자동 생성
+        });
+        userInput.value = ""; // 입력창 초기화
+      } catch (error) {
+        console.error("데이터 업로드 중 에러 발생:", error);
       }
     });
 
-    // 3. 데이터 저장 함수
-    window.autoSaveData = async function(updatedData) {
-      try {
-        await setDoc(docRef, updatedData, { merge: true });
-      } catch (e) {
-        console.error("저장 실패:", e);
-      }
-    };
-  </script>
+    // 3. 실시간 데이터 수신 (onSnapshot)
+    // 시간순(createdAt 기준 오름차순) 정렬 쿼리 작성
+    const q = query(messagesCollection, orderBy("createdAt", "asc"));
 
-  <script>
-    // TAB SWITCHING
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.getElementById(`sec-${tab}`).classList.remove('hidden');
-    }
+    // 데이터베이스에 변경사항이 발생할 때마다 자동으로 실행되는 리스너
+    onSnapshot(q, (snapshot) => {
+      dataList.innerHTML = ""; // 기존 목록 초기화
 
-    // ITINERARY DATA
-    const days = [
-      { day: 1, label: 'DAY 1 (10/29 목)', items: ['08:45 인천 출발 ✈️', '11:15 나리타 도착 & TCAT 이동', '13:30 츠지한 점심', '15:00 호텔 체크인', '17:00 시부야 야경 & 토리카츠 저녁'] },
-      { day: 2, label: 'DAY 2 (10/30 금)', items: ['10:00 마루노우치 브런치', '12:00 하라주쿠/오모테산도 쇼핑', '16:00 시바 공원 스냅', '18:00 도쿄 타워 야경'] },
-      { day: 3, label: 'DAY 3 (10/31 토)', items: ['09:00 아사쿠사 미소쥬 & 팡메종', '13:00 긴자 츠보야키이모 디저트', '18:00 스키야키 아사이 저녁'] },
-      { day: 4, label: 'DAY 4 (11/01 일)', items: ['10:00 해리포터 스튜디오', '15:00 신주쿠 우동신 / 이센혼텐', '18:00 오다이바 야경'] },
-      { day: 5, label: 'DAY 5 (11/02 월)', items: ['08:30 TCAT 직행 버스 탑승', '10:00 나리타 면세점', '12:30 YP732 인천 귀국'] }
-    ];
-
-    function renderDays() {
-      const btnContainer = document.getElementById('day-buttons');
-      btnContainer.innerHTML = days.map(d => 
-        `<button onclick="showTimeline(${d.day})" class="px-3 py-1.5 rounded-lg text-xs font-bold border bg-gray-50 hover:bg-[#F2EAE1]">${d.label}</button>`
-      ).join('');
-      showTimeline(1);
-    }
-
-    function showTimeline(dayNum) {
-      const d = days.find(x => x.day === dayNum);
-      document.getElementById('itinerary-timeline').innerHTML = `
-        <div class="bg-white p-4 rounded-xl border border-[#E8E1D7]">
-          <h4 class="font-bold text-sm text-[#E07A5F] mb-3">${d.label}</h4>
-          <ul class="space-y-2 text-xs text-gray-700">
-            ${d.items.map(i => `<li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#E07A5F]"></span>${i}</li>`).join('')}
-          </ul>
-        </div>`;
-    }
-
-    // GOURMET DATA
-    const gourmetList = [
-      { name: '츠지한', area: '긴자', cat: '식사', desc: '도쿄 대표 카이센동 맛집' },
-      { name: '토리카츠', area: '시부야', cat: '식사', desc: '가성비 훌륭한 골목 카츠 전문점' },
-      { name: '미소쥬', area: '아사쿠사', cat: '식사', desc: '따뜻한 된장국 정식 브런치' },
-      { name: '츠보야키이모', area: '긴자', cat: '디저트', desc: '항아리 군고구마 디저트' },
-      { name: '우동신', area: '신주쿠', cat: '식사', desc: '탱글탱글한 수제 붓카케 우동' }
-    ];
-
-    function filterGourmet() {
-      const query = document.getElementById('gourmet-search').value.toLowerCase();
-      const area = document.getElementById('gourmet-area').value;
-      const filtered = gourmetList.filter(g => 
-        (area === 'ALL' || g.area === area) &&
-        (g.name.toLowerCase().includes(query) || g.desc.toLowerCase().includes(query))
-      );
-      document.getElementById('gourmet-grid').innerHTML = filtered.map(g => `
-        <div class="bg-white p-4 rounded-xl border border-[#E8E1D7] text-xs">
-          <div class="flex justify-between items-center mb-1">
-            <span class="font-bold text-sm text-[#3D405B]">${g.name}</span>
-            <span class="bg-[#FAF7F2] border px-2 py-0.5 rounded text-gray-500">${g.area}</span>
-          </div>
-          <p class="text-gray-600 mt-1">${g.desc}</p>
-        </div>
-      `).join('');
-    }
-
-    // FLASHCARDS DATA
-    const cards = [
-      { front: "이걸로 주세요.", back: "Kore o kudasai", sub: "これをください" },
-      { front: "추천 메뉴가 무엇인가요?", back: "Osusume wa nandesuka?", sub: "おすすめは何ですか？" },
-      { front: "계산해 주세요.", back: "Okaikei o ogainashimasu", sub: "お会計をお願いします" },
-      { front: "화장실은 어디인가요?", back: "Toire wa doko desuka?", sub: "トイレはどこですか？" },
-      { front: "감사합니다.", back: "Arigatou gozaimasu", sub: "ありがとうございます" }
-    ];
-    let cardIdx = 0;
-
-    function renderCard() {
-      const c = cards[cardIdx];
-      document.getElementById('fc-front').innerText = c.front;
-      document.getElementById('fc-back').innerText = c.back;
-      document.getElementById('fc-sub').innerText = c.sub;
-      document.getElementById('fc-count').innerText = `${cardIdx + 1} / ${cards.length}`;
-      document.getElementById('fc-element').classList.remove('rotate-y-180');
-    }
-    function prevCard() { cardIdx = (cardIdx - 1 + cards.length) % cards.length; renderCard(); }
-    function nextCard() { cardIdx = (cardIdx + 1) % cards.length; renderCard(); }
-    function speakJP() {
-      const u = new SpeechSynthesisUtterance(cards[cardIdx].sub);
-      u.lang = 'ja-JP';
-      speechSynthesis.speak(u);
-    }
-
-    // BUDGET CHART & CALC
-    let budgetChart;
-    function initChart() {
-      const ctx = document.getElementById('budgetChart').getContext('2d');
-      budgetChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['항공권', '숙박비', '식비/카페', '티켓', '교통비'],
-          datasets: [{ data: [700000, 480000, 650000, 180000, 120000], backgroundColor: ['#E07A5F', '#81B29A', '#F2CC8F', '#3D405B', '#D8D0C5'] }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const li = document.createElement("li");
+        li.textContent = data.text || "(내용 없음)";
+        dataList.appendChild(li);
       });
-    }
-
-    function calcBudget(save = true) {
-      const f = Number(document.getElementById('in-flight').value) || 0;
-      const h = Number(document.getElementById('in-hotel').value) || 0;
-      const fd = Number(document.getElementById('in-food').value) || 0;
-      const t = Number(document.getElementById('in-ticket').value) || 0;
-      const tr = Number(document.getElementById('in-transit').value) || 0;
-      const total = f + h + fd + t + tr;
-      document.getElementById('tot-krw').innerText = `${total.toLocaleString()} 원`;
-      
-      if (budgetChart) {
-        budgetChart.data.datasets[0].data = [f, h, fd, t, tr];
-        budgetChart.update();
-      }
-
-      if (save && window.autoSaveData) {
-        window.autoSaveData({
-          budget: { flight: f, hotel: h, food: fd, ticket: t, transit: tr }
-        });
-      }
-    }
-
-    function saveChecklist() {
-      const checks = Array.from(document.querySelectorAll('#sec-checklist input[type="checkbox"]')).map(c => c.checked);
-      if (window.autoSaveData) {
-        window.autoSaveData({ checklist: checks });
-      }
-    }
-
-    // INIT
-    window.onload = () => {
-      renderDays();
-      filterGourmet();
-      renderCard();
-      initChart();
-    };
+    });
   </script>
+
 </body>
 </html>
