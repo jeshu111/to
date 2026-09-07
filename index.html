@@ -306,6 +306,18 @@
         </div>
         <input type="text" id="new-item-title" placeholder="일정 제목" class="w-full text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
         <textarea id="new-item-desc" placeholder="상세 설명 (선택)" rows="2" class="w-full text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"></textarea>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-gray-100">
+          <input type="text" id="new-item-origin" placeholder="출발지 (선택, 이동 항목용)" class="text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+          <input type="text" id="new-item-destination" placeholder="도착지 (선택, 이동 항목용)" class="text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+          <select id="new-item-travelmode" class="text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+            <option value="transit">🚃 대중교통</option>
+            <option value="walking">🚶 도보</option>
+            <option value="driving">🚗 자동차</option>
+            <option value="bicycling">🚲 자전거</option>
+          </select>
+        </div>
+        <p class="text-[11px] text-gray-400 -mt-1">출발지·도착지를 둘 다 입력하면, 일정 카드에 구글맵 길찾기 버튼이 생깁니다.</p>
         <div class="flex items-center gap-2">
           <button type="button" id="timeline-form-submit-btn" onclick="addTimelineItem()" class="bg-[#E07A5F] hover:bg-[#c9694f] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">+ 이 날짜에 일정 추가</button>
           <button type="button" id="timeline-form-cancel-btn" onclick="cancelEditTimelineItem()" class="hidden text-sm font-bold px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
@@ -1237,6 +1249,13 @@
               </div>
               <h4 class="font-bold text-base text-[#3D405B] mb-1">${escapeHtml(item.title || '')}</h4>
               <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">${escapeHtml(item.desc || '')}</p>
+              ${(item.origin && item.destination) ? `
+                <a href="https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(item.origin)}&destination=${encodeURIComponent(item.destination)}&travelmode=${encodeURIComponent(item.travelmode || 'transit')}"
+                   target="_blank" rel="noopener"
+                   class="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#3D405B] bg-[#FAF7F2] hover:bg-[#E8E1D7] px-3 py-1.5 rounded-lg border border-[#E8E1D7] transition-all">
+                  <span>🧭</span><span>${escapeHtml(item.origin)} → ${escapeHtml(item.destination)} 길찾기</span>
+                </a>
+              ` : ''}
             </div>
           </div>
         `;
@@ -1257,6 +1276,9 @@
       document.getElementById('new-item-tag').value = item.tag || '이동';
       document.getElementById('new-item-title').value = item.title || '';
       document.getElementById('new-item-desc').value = item.desc || '';
+      document.getElementById('new-item-origin').value = item.origin || '';
+      document.getElementById('new-item-destination').value = item.destination || '';
+      document.getElementById('new-item-travelmode').value = item.travelmode || 'transit';
 
       editingTimelineItem = { day: dayKey, id: id };
       updateTimelineFormUI();
@@ -1269,6 +1291,9 @@
       document.getElementById('new-item-tag').value = '이동';
       document.getElementById('new-item-title').value = '';
       document.getElementById('new-item-desc').value = '';
+      document.getElementById('new-item-origin').value = '';
+      document.getElementById('new-item-destination').value = '';
+      document.getElementById('new-item-travelmode').value = 'transit';
       updateTimelineFormUI();
     }
 
@@ -1293,6 +1318,9 @@
       const tag = document.getElementById('new-item-tag').value;
       const title = document.getElementById('new-item-title').value.trim();
       const desc = document.getElementById('new-item-desc').value.trim();
+      const origin = document.getElementById('new-item-origin').value.trim();
+      const destination = document.getElementById('new-item-destination').value.trim();
+      const travelmode = document.getElementById('new-item-travelmode').value;
 
       if (!time || !title) {
         alert('시간과 일정 제목은 꼭 입력해주세요.');
@@ -1302,7 +1330,7 @@
       if (editingTimelineItem) {
         const dayKey = editingTimelineItem.day;
         const id = editingTimelineItem.id;
-        itineraryDocRef.set({ [dayKey]: { items: { [id]: { time: time, tag: tag, title: title, desc: desc } } } }, { merge: true })
+        itineraryDocRef.set({ [dayKey]: { items: { [id]: { time: time, tag: tag, title: title, desc: desc, origin: origin, destination: destination, travelmode: travelmode } } } }, { merge: true })
           .then(cancelEditTimelineItem)
           .catch(function (e) {
             console.warn('일정 수정 실패:', e);
@@ -1312,11 +1340,14 @@
         const dayKey = 'day' + currentDaySelected;
         const id = 'item_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
         const order = Date.now();
-        itineraryDocRef.set({ [dayKey]: { items: { [id]: { time: time, tag: tag, title: title, desc: desc, order: order } } } }, { merge: true })
+        itineraryDocRef.set({ [dayKey]: { items: { [id]: { time: time, tag: tag, title: title, desc: desc, origin: origin, destination: destination, travelmode: travelmode, order: order } } } }, { merge: true })
           .then(function () {
             document.getElementById('new-item-time').value = '';
             document.getElementById('new-item-title').value = '';
             document.getElementById('new-item-desc').value = '';
+            document.getElementById('new-item-origin').value = '';
+            document.getElementById('new-item-destination').value = '';
+            document.getElementById('new-item-travelmode').value = 'transit';
           })
           .catch(function (e) {
             console.warn('일정 추가 실패:', e);
