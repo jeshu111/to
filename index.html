@@ -1441,7 +1441,8 @@
         });
     }
 
-    // < / > 버튼: 이 DAY의 전체 일정(날짜+제목+타임라인 항목)을 인접한 DAY와 통째로 교환
+    // < / > 버튼: 날짜(달력상 순서)는 각 DAY 자리에 고정하고,
+    // 그 날의 계획 내용(제목 + 타임라인 항목)만 인접한 DAY와 통째로 교환합니다.
     function swapWholeDay(dayNum, direction) {
       const otherDayNum = dayNum + direction;
       if (otherDayNum < 1 || otherDayNum > 5) return;
@@ -1454,12 +1455,8 @@
       if (!thisData || !otherData) return;
 
       itineraryDocRef.update({
-        [`${dayKey}.date`]: otherData.date,
-        [`${dayKey}.shortDate`]: otherData.shortDate || '',
         [`${dayKey}.title`]: otherData.title,
         [`${dayKey}.items`]: otherData.items || {},
-        [`${otherDayKey}.date`]: thisData.date,
-        [`${otherDayKey}.shortDate`]: thisData.shortDate || '',
         [`${otherDayKey}.title`]: thisData.title,
         [`${otherDayKey}.items`]: thisData.items || {}
       }).catch(function (e) {
