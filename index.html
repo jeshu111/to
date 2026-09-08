@@ -1212,9 +1212,11 @@
 
       let html = `
         <div class="bg-white p-5 rounded-2xl border border-[#E8E1D7] flex items-center justify-between mb-4">
-          <div>
-            <span class="text-xs font-extrabold px-2.5 py-1 rounded-md text-white mr-2" style="background-color: ${dayData.color}">${dayData.badge}</span>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="swapDayDate(${dayNum}, -1)" title="이전 날짜와 교환" ${dayNum <= 1 ? 'disabled' : ''} class="text-gray-300 hover:text-[#E07A5F] font-bold px-1.5 disabled:opacity-20 disabled:cursor-not-allowed transition-colors">&lt;</button>
+            <span class="text-xs font-extrabold px-2.5 py-1 rounded-md text-white mr-1" style="background-color: ${dayData.color}">${dayData.badge}</span>
             <span class="text-lg font-bold text-[#3D405B]">${dayData.date}</span>
+            <button type="button" onclick="swapDayDate(${dayNum}, 1)" title="다음 날짜와 교환" ${dayNum >= 5 ? 'disabled' : ''} class="text-gray-300 hover:text-[#E07A5F] font-bold px-1.5 disabled:opacity-20 disabled:cursor-not-allowed transition-colors">&gt;</button>
           </div>
           <h3 class="text-sm font-semibold text-[#E07A5F] hidden sm:block">${dayData.title}</h3>
         </div>
@@ -1369,6 +1371,27 @@
           console.warn('일정 순서 변경 실패:', e);
           alert('순서 변경에 실패했습니다.');
         });
+    }
+
+    // < / > 버튼: 이 날짜(date)를 인접한 DAY와 통째로 교환 (DAY 라벨/제목/일정은 그대로, 날짜만 교환)
+    function swapDayDate(dayNum, direction) {
+      const otherDayNum = dayNum + direction;
+      if (otherDayNum < 1 || otherDayNum > 5) return;
+
+      const dayKey = 'day' + dayNum;
+      const otherDayKey = 'day' + otherDayNum;
+      const thisDate = itineraryCache[dayKey] && itineraryCache[dayKey].date;
+      const otherDate = itineraryCache[otherDayKey] && itineraryCache[otherDayKey].date;
+
+      if (thisDate === undefined || otherDate === undefined) return;
+
+      itineraryDocRef.update({
+        [`${dayKey}.date`]: otherDate,
+        [`${otherDayKey}.date`]: thisDate
+      }).catch(function (e) {
+        console.warn('날짜 교환 실패:', e);
+        alert('날짜 교환에 실패했습니다.');
+      });
     }
 
     // 수정 버튼 클릭 → 아래 입력 폼에 기존 값 채우고 "수정 모드"로 전환
