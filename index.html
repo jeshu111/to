@@ -1207,7 +1207,7 @@
 
       const items = dayData.items || {};
       const itemIds = Object.keys(items).sort(function (a, b) {
-        return (items[a].order || 0) - (items[b].order || 0);
+        return getItemSortValue(items[a]) - getItemSortValue(items[b]);
       });
 
       let html = `
@@ -1225,7 +1225,7 @@
         html += `<p class="text-sm text-gray-400 py-4">아직 등록된 일정이 없습니다. 아래에서 추가해 보세요.</p>`;
       }
 
-      itemIds.forEach(function (id) {
+      itemIds.forEach(function (id, idx) {
         const item = items[id];
         let tagColor = "bg-gray-100 text-gray-700";
         if (item.tag === "식사") tagColor = "bg-[#E07A5F]/15 text-[#E07A5F]";
@@ -1233,16 +1233,21 @@
         if (item.tag === "관광") tagColor = "bg-[#81B29A]/15 text-[#81B29A]";
         if (item.tag === "이동") tagColor = "bg-[#3D405B]/10 text-[#3D405B]";
 
+        const isFirst = idx === 0;
+        const isLast = idx === itemIds.length - 1;
+
         html += `
-          <div class="relative group">
+          <div class="relative group timeline-card" draggable="true" data-day="${dayKey}" data-id="${id}">
             <!-- Timeline Node Bullet -->
             <div class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-4 h-4 rounded-full border-2 border-white shadow-sm" style="background-color: ${dayData.color}"></div>
             
-            <div class="bg-white p-5 rounded-2xl border border-[#E8E1D7] hover:border-[#E07A5F] transition-all shadow-sm">
+            <div class="bg-white p-5 rounded-2xl border border-[#E8E1D7] hover:border-[#E07A5F] transition-all shadow-sm cursor-grab active:cursor-grabbing">
               <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <span class="text-xs font-bold text-gray-500 bg-[#FAF7F2] px-2.5 py-1 rounded-lg border border-[#E8E1D7]">⏰ ${escapeHtml(item.time || '')}</span>
-                <div class="flex items-center gap-2">
-                  <span class="text-xs font-bold px-2 py-0.5 rounded-full ${tagColor}">${escapeHtml(item.tag || '')}</span>
+                <div class="flex items-center gap-1">
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full ${tagColor} mr-1">${escapeHtml(item.tag || '')}</span>
+                  <button type="button" onclick="moveTimelineItem('${dayKey}','${id}','up')" title="위로 이동" ${isFirst ? 'disabled' : ''} class="text-gray-300 hover:text-[#E07A5F] text-xs px-1 opacity-70 group-hover:opacity-100 transition-opacity disabled:opacity-20 disabled:cursor-not-allowed">▲</button>
+                  <button type="button" onclick="moveTimelineItem('${dayKey}','${id}','down')" title="아래로 이동" ${isLast ? 'disabled' : ''} class="text-gray-300 hover:text-[#E07A5F] text-xs px-1 opacity-70 group-hover:opacity-100 transition-opacity disabled:opacity-20 disabled:cursor-not-allowed">▼</button>
                   <button type="button" onclick="startEditTimelineItem('${dayKey}','${id}')" title="수정" class="text-gray-300 hover:text-[#E07A5F] text-xs px-1 opacity-70 group-hover:opacity-100 transition-opacity">✎</button>
                   <button type="button" onclick="deleteTimelineItem('${dayKey}','${id}')" title="삭제" class="text-gray-300 hover:text-[#E07A5F] text-xs px-1 opacity-70 group-hover:opacity-100 transition-opacity">✕</button>
                 </div>
@@ -1263,6 +1268,107 @@
 
       html += `</div>`;
       container.innerHTML = html;
+      attachTimelineDragHandlers();
+    }
+
+    // 카드를 잡고 드래그해서 순서를 바꿀 때(데스크탑) 사용하는 핸들러
+    let draggedTimelineCard = null;
+
+    function attachTimelineDragHandlers() {
+      const cards = document.querySelectorAll('.timeline-card');
+      cards.forEach(function (card) {
+        card.addEventListener('dragstart', function () {
+          draggedTimelineCard = { day: card.dataset.day, id: card.dataset.id };
+          card.classList.add('opacity-40');
+        });
+        card.addEventListener('dragend', function () {
+          card.classList.remove('opacity-40');
+        });
+        card.addEventListener('dragover', function (e) {
+          e.preventDefault();
+          card.classList.add('ring-2', 'ring-[#E07A5F]');
+        });
+        card.addEventListener('dragleave', function () {
+          card.classList.remove('ring-2', 'ring-[#E07A5F]');
+        });
+        card.addEventListener('drop', function (e) {
+          e.preventDefault();
+          card.classList.remove('ring-2', 'ring-[#E07A5F]');
+          if (!draggedTimelineCard) return;
+          const targetDay = card.dataset.day;
+          const targetId = card.dataset.id;
+          if (draggedTimelineCard.day !== targetDay || draggedTimelineCard.id === targetId) return;
+          reorderTimelineItem(targetDay, draggedTimelineCard.id, targetId);
+          draggedTimelineCard = null;
+        });
+      });
+    }
+
+    // 시간 문자열(예: "14:00 ~ 15:00")에서 시작 시각을 분 단위 숫자로 변환. 실패하면 null.
+    function parseTimeToMinutes(timeStr) {
+      if (!timeStr) return null;
+      const m = timeStr.match(/(\d{1,2}):(\d{2})/);
+      if (!m) return null;
+      const hours = parseInt(m[1], 10);
+      const mins = parseInt(m[2], 10);
+      if (isNaN(hours) || isNaN(mins)) return null;
+      return hours * 60 + mins;
+    }
+
+    // 정렬 기준값: 사용자가 수동으로 순서를 옮긴 적 있으면 그 값(manualOrder)을 우선 사용,
+    // 그렇지 않으면 시간 텍스트에서 실시간으로 계산한 분(分) 값을 사용 → 시간 수정 시 자동 재정렬됨
+    function getItemSortValue(item) {
+      if (item && typeof item.manualOrder === 'number') return item.manualOrder;
+      const parsed = item ? parseTimeToMinutes(item.time) : null;
+      return parsed !== null ? parsed : ((item && item.order) || 0);
+    }
+
+    // ▲▼ 버튼: 바로 위/아래 항목과 순서를 맞바꿈 (수동 순서로 전환됨, 모바일에서도 동작)
+    function moveTimelineItem(dayKey, id, direction) {
+      const items = (itineraryCache[dayKey] && itineraryCache[dayKey].items) || {};
+      const ids = Object.keys(items).sort(function (a, b) {
+        return getItemSortValue(items[a]) - getItemSortValue(items[b]);
+      });
+      const idx = ids.indexOf(id);
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (idx === -1 || swapIdx < 0 || swapIdx >= ids.length) return;
+
+      const otherId = ids[swapIdx];
+      const orderA = getItemSortValue(items[id]);
+      const orderB = getItemSortValue(items[otherId]);
+
+      itineraryDocRef.update({
+        [`${dayKey}.items.${id}.manualOrder`]: orderB,
+        [`${dayKey}.items.${otherId}.manualOrder`]: orderA
+      }).catch(function (e) {
+        console.warn('일정 순서 변경 실패:', e);
+        alert('순서 변경에 실패했습니다.');
+      });
+    }
+
+    // 드래그로 카드를 targetId 바로 앞자리에 끼워 넣기 (수동 순서로 전환됨, 데스크탑용)
+    function reorderTimelineItem(dayKey, draggedId, targetId) {
+      const items = (itineraryCache[dayKey] && itineraryCache[dayKey].items) || {};
+      let ids = Object.keys(items).sort(function (a, b) {
+        return getItemSortValue(items[a]) - getItemSortValue(items[b]);
+      });
+      ids = ids.filter(function (id) { return id !== draggedId; });
+
+      const targetIndex = ids.indexOf(targetId);
+      if (targetIndex === -1) return;
+
+      const prevId = ids[targetIndex - 1];
+      const nextOrder = getItemSortValue(items[targetId]);
+      const prevOrder = prevId ? getItemSortValue(items[prevId]) : nextOrder - 20;
+
+      let newOrder = (prevOrder + nextOrder) / 2;
+      if (newOrder === nextOrder) newOrder = nextOrder - 0.001;
+
+      itineraryDocRef.update({ [`${dayKey}.items.${draggedId}.manualOrder`]: newOrder })
+        .catch(function (e) {
+          console.warn('일정 순서 변경 실패:', e);
+          alert('순서 변경에 실패했습니다.');
+        });
     }
 
     // 수정 버튼 클릭 → 아래 입력 폼에 기존 값 채우고 "수정 모드"로 전환
@@ -1330,7 +1436,8 @@
       if (editingTimelineItem) {
         const dayKey = editingTimelineItem.day;
         const id = editingTimelineItem.id;
-        itineraryDocRef.set({ [dayKey]: { items: { [id]: { time: time, tag: tag, title: title, desc: desc, origin: origin, destination: destination, travelmode: travelmode } } } }, { merge: true })
+        // 시간을 수정하면 수동 정렬(manualOrder)은 해제되어 다시 시간순으로 자동 정렬됩니다.
+        itineraryDocRef.set({ [dayKey]: { items: { [id]: { time: time, tag: tag, title: title, desc: desc, origin: origin, destination: destination, travelmode: travelmode, manualOrder: firebase.firestore.FieldValue.delete() } } } }, { merge: true })
           .then(cancelEditTimelineItem)
           .catch(function (e) {
             console.warn('일정 수정 실패:', e);
@@ -1339,8 +1446,7 @@
       } else {
         const dayKey = 'day' + currentDaySelected;
         const id = 'item_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-        const order = Date.now();
-        itineraryDocRef.set({ [dayKey]: { items: { [id]: { time: time, tag: tag, title: title, desc: desc, origin: origin, destination: destination, travelmode: travelmode, order: order } } } }, { merge: true })
+        itineraryDocRef.set({ [dayKey]: { items: { [id]: { time: time, tag: tag, title: title, desc: desc, origin: origin, destination: destination, travelmode: travelmode } } } }, { merge: true })
           .then(function () {
             document.getElementById('new-item-time').value = '';
             document.getElementById('new-item-title').value = '';
