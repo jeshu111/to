@@ -1212,7 +1212,7 @@
           return;
         }
         itineraryCache = docSnap.data() || {};
-        migrateShortDatesIfNeeded();
+        enforceCanonicalDates();
         renderDayTabs();
         renderTimeline(currentDaySelected);
       }, function (err) {
@@ -1222,33 +1222,34 @@
       });
     }
 
-    // "10월 31일 (토 / 할로윈)" 같은 표기에서 "10/31 토" 같은 짧은 표기를 뽑아냅니다.
-    function deriveShortDateFromFullDate(dateStr) {
-      if (!dateStr) return '';
-      const m = dateStr.match(/(\d{1,2})월\s*(\d{1,2})일\s*\(([^\s\/\)]+)/);
-      if (!m) return '';
-      const month = parseInt(m[1], 10);
-      const day = parseInt(m[2], 10);
-      return `${month}/${String(day).padStart(2, '0')} ${m[3]}`;
-    }
+    // 날짜는 DAY 자리별로 항상 고정입니다 (10/29 목 ~ 11/02 월). 이 값은 절대 바뀌지 않으며,
+    // 혹시 과거 데이터가 어긋나 있어도 접속할 때마다 자동으로 이 값으로 되돌립니다.
+    const CANONICAL_DAY_DATES = {
+      day1: { date: '10월 29일 (목)', shortDate: '10/29 목' },
+      day2: { date: '10월 30일 (금)', shortDate: '10/30 금' },
+      day3: { date: '10월 31일 (토 / 할로윈)', shortDate: '10/31 토' },
+      day4: { date: '11월 01일 (일)', shortDate: '11/01 일' },
+      day5: { date: '11월 02일 (월)', shortDate: '11/02 월' }
+    };
 
-    // 예전 데이터(shortDate 필드가 없는 경우)를 한 번만 보정합니다.
-    function migrateShortDatesIfNeeded() {
+    function enforceCanonicalDates() {
       const updates = {};
-      for (let i = 1; i <= 5; i++) {
-        const dk = 'day' + i;
-        const d = itineraryCache[dk];
-        if (d && !d.shortDate) {
-          const derived = deriveShortDateFromFullDate(d.date);
-          if (derived) {
-            updates[`${dk}.shortDate`] = derived;
-            d.shortDate = derived;
-          }
+      Object.keys(CANONICAL_DAY_DATES).forEach(function (dk) {
+        const canonical = CANONICAL_DAY_DATES[dk];
+        const current = itineraryCache[dk];
+        if (!current) return;
+        if (current.date !== canonical.date) {
+          updates[`${dk}.date`] = canonical.date;
+          current.date = canonical.date;
         }
-      }
+        if (current.shortDate !== canonical.shortDate) {
+          updates[`${dk}.shortDate`] = canonical.shortDate;
+          current.shortDate = canonical.shortDate;
+        }
+      });
       if (Object.keys(updates).length > 0) {
         itineraryDocRef.update(updates).catch(function (e) {
-          console.warn('shortDate 보정 실패:', e);
+          console.warn('날짜 고정 보정 실패:', e);
         });
       }
     }
