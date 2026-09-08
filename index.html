@@ -275,12 +275,32 @@
         </p>
         
         <!-- Day Filter Tabs -->
-        <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
-          <button onclick="selectDay(1)" id="day-btn-1" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-[#E07A5F] text-white">DAY 1 (10/29 목)</button>
-          <button onclick="selectDay(2)" id="day-btn-2" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-[#5C6079] hover:bg-gray-200">DAY 2 (10/30 금)</button>
-          <button onclick="selectDay(3)" id="day-btn-3" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-[#5C6079] hover:bg-gray-200">DAY 3 (10/31 토)</button>
-          <button onclick="selectDay(4)" id="day-btn-4" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-[#5C6079] hover:bg-gray-200">DAY 4 (11/01 일)</button>
-          <button onclick="selectDay(5)" id="day-btn-5" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-[#5C6079] hover:bg-gray-200">DAY 5 (11/02 월)</button>
+        <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100" id="day-tabs-container">
+          <div class="flex items-center gap-0.5">
+            <button type="button" onclick="event.stopPropagation(); swapWholeDay(1, -1)" title="이전 DAY와 통째로 교환" disabled class="text-gray-300 hover:text-[#E07A5F] text-xs font-bold px-1 disabled:opacity-20 disabled:cursor-not-allowed transition-colors">&lt;</button>
+            <button onclick="selectDay(1)" id="day-btn-1" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-[#E07A5F] text-white"><span id="day-btn-label-1">DAY 1 (10/29 목)</span></button>
+            <button type="button" onclick="event.stopPropagation(); swapWholeDay(1, 1)" title="다음 DAY와 통째로 교환" class="text-gray-300 hover:text-[#E07A5F] text-xs font-bold px-1 transition-colors">&gt;</button>
+          </div>
+          <div class="flex items-center gap-0.5">
+            <button type="button" onclick="event.stopPropagation(); swapWholeDay(2, -1)" title="이전 DAY와 통째로 교환" class="text-gray-300 hover:text-[#E07A5F] text-xs font-bold px-1 transition-colors">&lt;</button>
+            <button onclick="selectDay(2)" id="day-btn-2" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-[#5C6079] hover:bg-gray-200"><span id="day-btn-label-2">DAY 2 (10/30 금)</span></button>
+            <button type="button" onclick="event.stopPropagation(); swapWholeDay(2, 1)" title="다음 DAY와 통째로 교환" class="text-gray-300 hover:text-[#E07A5F] text-xs font-bold px-1 transition-colors">&gt;</button>
+          </div>
+          <div class="flex items-center gap-0.5">
+            <button type="button" onclick="event.stopPropagation(); swapWholeDay(3, -1)" title="이전 DAY와 통째로 교환" class="text-gray-300 hover:text-[#E07A5F] text-xs font-bold px-1 transition-colors">&lt;</button>
+            <button onclick="selectDay(3)" id="day-btn-3" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-[#5C6079] hover:bg-gray-200"><span id="day-btn-label-3">DAY 3 (10/31 토)</span></button>
+            <button type="button" onclick="event.stopPropagation(); swapWholeDay(3, 1)" title="다음 DAY와 통째로 교환" class="text-gray-300 hover:text-[#E07A5F] text-xs font-bold px-1 transition-colors">&gt;</button>
+          </div>
+          <div class="flex items-center gap-0.5">
+            <button type="button" onclick="event.stopPropagation(); swapWholeDay(4, -1)" title="이전 DAY와 통째로 교환" class="text-gray-300 hover:text-[#E07A5F] text-xs font-bold px-1 transition-colors">&lt;</button>
+            <button onclick="selectDay(4)" id="day-btn-4" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-[#5C6079] hover:bg-gray-200"><span id="day-btn-label-4">DAY 4 (11/01 일)</span></button>
+            <button type="button" onclick="event.stopPropagation(); swapWholeDay(4, 1)" title="다음 DAY와 통째로 교환" class="text-gray-300 hover:text-[#E07A5F] text-xs font-bold px-1 transition-colors">&gt;</button>
+          </div>
+          <div class="flex items-center gap-0.5">
+            <button type="button" onclick="event.stopPropagation(); swapWholeDay(5, -1)" title="이전 DAY와 통째로 교환" class="text-gray-300 hover:text-[#E07A5F] text-xs font-bold px-1 transition-colors">&lt;</button>
+            <button onclick="selectDay(5)" id="day-btn-5" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-[#5C6079] hover:bg-gray-200"><span id="day-btn-label-5">DAY 5 (11/02 월)</span></button>
+            <button type="button" onclick="event.stopPropagation(); swapWholeDay(5, 1)" title="다음 DAY와 통째로 교환" disabled class="text-gray-300 hover:text-[#E07A5F] text-xs font-bold px-1 disabled:opacity-20 disabled:cursor-not-allowed transition-colors">&gt;</button>
+          </div>
         </div>
       </div>
 
@@ -742,6 +762,7 @@
     const defaultItineraryData = {
   "day1": {
     "date": "10월 29일 (목)",
+    "shortDate": "10/29 목",
     "title": "도쿄 도착 & 니혼바시 카이센동 + 시부야 밤거리",
     "badge": "DAY 1",
     "color": "#E07A5F",
@@ -806,6 +827,7 @@
   },
   "day2": {
     "date": "10월 30일 (금)",
+    "shortDate": "10/30 금",
     "title": "브런치 & 트렌디 쇼핑 + 🗼 로맨틱 도쿄 타워 데이트",
     "badge": "DAY 2",
     "color": "#81B29A",
@@ -849,6 +871,7 @@
   },
   "day3": {
     "date": "10월 31일 (토 / 할로윈)",
+    "shortDate": "10/31 토",
     "title": "아사쿠사 디저트 투어 & 🍠 긴자 츠보야키이모 데이트",
     "badge": "DAY 3",
     "color": "#8F5B00",
@@ -892,6 +915,7 @@
   },
   "day4": {
     "date": "11월 01일 (일)",
+    "shortDate": "11/01 일",
     "title": "🪄 해리 포터 스튜디오 & 신주쿠 우동신 / 우에노 장인 돈카츠",
     "badge": "DAY 4",
     "color": "#3D405B",
@@ -928,6 +952,7 @@
   },
   "day5": {
     "date": "11월 02일 (월)",
+    "shortDate": "11/02 월",
     "title": "편안한 공항 이동 & 나리타 면세점 쇼핑 & 귀국",
     "badge": "DAY 5",
     "color": "#6C757D",
@@ -1187,12 +1212,57 @@
           return;
         }
         itineraryCache = docSnap.data() || {};
+        migrateShortDatesIfNeeded();
+        renderDayTabs();
         renderTimeline(currentDaySelected);
       }, function (err) {
         console.warn('일정 실시간 동기화 오류:', err);
         document.getElementById('itinerary-timeline-container').innerHTML =
           '<p class="text-sm text-red-500 text-center py-10">⚠️ 일정 데이터를 불러오지 못했습니다. Firestore 규칙(Rules)에서 tokyoTrip 컬렉션 전체가 허용되어 있는지 확인해주세요.</p>';
       });
+    }
+
+    // "10월 31일 (토 / 할로윈)" 같은 표기에서 "10/31 토" 같은 짧은 표기를 뽑아냅니다.
+    function deriveShortDateFromFullDate(dateStr) {
+      if (!dateStr) return '';
+      const m = dateStr.match(/(\d{1,2})월\s*(\d{1,2})일\s*\(([^\s\/\)]+)/);
+      if (!m) return '';
+      const month = parseInt(m[1], 10);
+      const day = parseInt(m[2], 10);
+      return `${month}/${String(day).padStart(2, '0')} ${m[3]}`;
+    }
+
+    // 예전 데이터(shortDate 필드가 없는 경우)를 한 번만 보정합니다.
+    function migrateShortDatesIfNeeded() {
+      const updates = {};
+      for (let i = 1; i <= 5; i++) {
+        const dk = 'day' + i;
+        const d = itineraryCache[dk];
+        if (d && !d.shortDate) {
+          const derived = deriveShortDateFromFullDate(d.date);
+          if (derived) {
+            updates[`${dk}.shortDate`] = derived;
+            d.shortDate = derived;
+          }
+        }
+      }
+      if (Object.keys(updates).length > 0) {
+        itineraryDocRef.update(updates).catch(function (e) {
+          console.warn('shortDate 보정 실패:', e);
+        });
+      }
+    }
+
+    // DAY 탭 버튼들의 라벨(날짜)을 최신 데이터로 갱신
+    function renderDayTabs() {
+      for (let i = 1; i <= 5; i++) {
+        const dk = 'day' + i;
+        const d = itineraryCache[dk];
+        const label = document.getElementById('day-btn-label-' + i);
+        if (d && label) {
+          label.textContent = `${d.badge} (${d.shortDate || ''})`;
+        }
+      }
     }
 
     function renderTimeline(dayNum) {
@@ -1212,11 +1282,9 @@
 
       let html = `
         <div class="bg-white p-5 rounded-2xl border border-[#E8E1D7] flex items-center justify-between mb-4">
-          <div class="flex items-center gap-1">
-            <button type="button" onclick="swapDayDate(${dayNum}, -1)" title="이전 날짜와 교환" ${dayNum <= 1 ? 'disabled' : ''} class="text-gray-300 hover:text-[#E07A5F] font-bold px-1.5 disabled:opacity-20 disabled:cursor-not-allowed transition-colors">&lt;</button>
-            <span class="text-xs font-extrabold px-2.5 py-1 rounded-md text-white mr-1" style="background-color: ${dayData.color}">${dayData.badge}</span>
+          <div>
+            <span class="text-xs font-extrabold px-2.5 py-1 rounded-md text-white mr-2" style="background-color: ${dayData.color}">${dayData.badge}</span>
             <span class="text-lg font-bold text-[#3D405B]">${dayData.date}</span>
-            <button type="button" onclick="swapDayDate(${dayNum}, 1)" title="다음 날짜와 교환" ${dayNum >= 5 ? 'disabled' : ''} class="text-gray-300 hover:text-[#E07A5F] font-bold px-1.5 disabled:opacity-20 disabled:cursor-not-allowed transition-colors">&gt;</button>
           </div>
           <h3 class="text-sm font-semibold text-[#E07A5F] hidden sm:block">${dayData.title}</h3>
         </div>
@@ -1373,24 +1441,30 @@
         });
     }
 
-    // < / > 버튼: 이 날짜(date)를 인접한 DAY와 통째로 교환 (DAY 라벨/제목/일정은 그대로, 날짜만 교환)
-    function swapDayDate(dayNum, direction) {
+    // < / > 버튼: 이 DAY의 전체 일정(날짜+제목+타임라인 항목)을 인접한 DAY와 통째로 교환
+    function swapWholeDay(dayNum, direction) {
       const otherDayNum = dayNum + direction;
       if (otherDayNum < 1 || otherDayNum > 5) return;
 
       const dayKey = 'day' + dayNum;
       const otherDayKey = 'day' + otherDayNum;
-      const thisDate = itineraryCache[dayKey] && itineraryCache[dayKey].date;
-      const otherDate = itineraryCache[otherDayKey] && itineraryCache[otherDayKey].date;
+      const thisData = itineraryCache[dayKey];
+      const otherData = itineraryCache[otherDayKey];
 
-      if (thisDate === undefined || otherDate === undefined) return;
+      if (!thisData || !otherData) return;
 
       itineraryDocRef.update({
-        [`${dayKey}.date`]: otherDate,
-        [`${otherDayKey}.date`]: thisDate
+        [`${dayKey}.date`]: otherData.date,
+        [`${dayKey}.shortDate`]: otherData.shortDate || '',
+        [`${dayKey}.title`]: otherData.title,
+        [`${dayKey}.items`]: otherData.items || {},
+        [`${otherDayKey}.date`]: thisData.date,
+        [`${otherDayKey}.shortDate`]: thisData.shortDate || '',
+        [`${otherDayKey}.title`]: thisData.title,
+        [`${otherDayKey}.items`]: thisData.items || {}
       }).catch(function (e) {
-        console.warn('날짜 교환 실패:', e);
-        alert('날짜 교환에 실패했습니다.');
+        console.warn('일정 교환 실패:', e);
+        alert('일정 교환에 실패했습니다.');
       });
     }
 
