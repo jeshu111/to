@@ -491,7 +491,17 @@
         <!-- Interactive Checkboxes -->
         <div class="bg-white p-6 rounded-2xl border border-[#E8E1D7] shadow-sm space-y-4">
           <h3 class="font-bold text-[#3D405B] text-lg">✅ 출국 전 준비물 체크리스트</h3>
-          
+
+          <div>
+            <div class="flex items-center justify-between text-xs font-bold text-gray-500 mb-1.5">
+              <span id="checklist-progress-label">0/0개 완료</span>
+              <span id="checklist-progress-percent">0%</span>
+            </div>
+            <div class="w-full h-2.5 bg-[#FAF7F2] rounded-full overflow-hidden border border-[#E8E1D7]">
+              <div id="checklist-progress-bar" class="h-full bg-[#E07A5F] rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+
           <div class="space-y-3 text-sm">
             <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F2] transition-colors">
               <input type="checkbox" checked data-checklist-id="passport" class="checklist-item w-4 h-4 text-[#E07A5F] rounded accent-[#E07A5F]">
@@ -620,6 +630,22 @@
       return div.innerHTML;
     }
 
+    // 체크리스트 진행률(완료 개수/전체, %) 계산해서 상단 바에 반영
+    function updateChecklistProgress() {
+      const all = document.querySelectorAll('.checklist-item, .custom-checklist-item');
+      const total = all.length;
+      let checked = 0;
+      all.forEach(function (el) { if (el.checked) checked++; });
+      const percent = total > 0 ? Math.round((checked / total) * 100) : 0;
+
+      const label = document.getElementById('checklist-progress-label');
+      const percentEl = document.getElementById('checklist-progress-percent');
+      const bar = document.getElementById('checklist-progress-bar');
+      if (label) label.textContent = `${checked}/${total}개 완료`;
+      if (percentEl) percentEl.textContent = `${percent}%`;
+      if (bar) bar.style.width = `${percent}%`;
+    }
+
     // 사용자가 직접 추가한 커스텀 항목들을 화면에 그려주는 함수
     function renderCustomItems(customItems) {
       const container = document.getElementById('custom-checklist-items');
@@ -627,6 +653,7 @@
 
       if (ids.length === 0) {
         container.innerHTML = '';
+        updateChecklistProgress();
         return;
       }
 
@@ -645,6 +672,7 @@
       container.querySelectorAll('.custom-checklist-item').forEach(function (el) {
         el.addEventListener('change', function () {
           if (isApplyingRemoteUpdate) return;
+          updateChecklistProgress();
           const id = el.dataset.customId;
           checklistDocRef.set({ customItems: { [id]: { checked: el.checked } } }, { merge: true })
             .catch(function (e) {
@@ -665,6 +693,8 @@
             });
         });
       });
+
+      updateChecklistProgress();
     }
 
     // 새 준비물 추가 버튼/Enter 입력 시 호출
@@ -693,6 +723,7 @@
       items.forEach(function (el) {
         el.addEventListener('change', function () {
           if (isApplyingRemoteUpdate) return;
+          updateChecklistProgress();
           const id = el.dataset.checklistId;
           checklistDocRef.set({ [id]: el.checked }, { merge: true })
             .catch(function (e) {
@@ -1113,6 +1144,29 @@
     /* ======================================================== */
 
     let currentDaySelected = 1;
+    let hasAutoSelectedToday = false;
+
+    // 트립 실제 달력 날짜 (연도 고정: 2026년 10/29 ~ 11/02)
+    const TRIP_CALENDAR_DATES = {
+      day1: { year: 2026, month: 10, day: 29 },
+      day2: { year: 2026, month: 10, day: 30 },
+      day3: { year: 2026, month: 10, day: 31 },
+      day4: { year: 2026, month: 11, day: 1 },
+      day5: { year: 2026, month: 11, day: 2 }
+    };
+
+    // 오늘 날짜와 일치하는 DAY 번호를 반환 (없으면 null)
+    function getTodayDayNumber() {
+      const now = new Date();
+      const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
+      for (const key in TRIP_CALENDAR_DATES) {
+        const t = TRIP_CALENDAR_DATES[key];
+        if (t.year === y && t.month === m && t.day === d) {
+          return parseInt(key.replace('day', ''), 10);
+        }
+      }
+      return null;
+    }
     let budgetChartInstance = null;
     let itineraryCache = {};   // Firestore에서 받아온 일정 데이터 캐시
     let gourmetCache = {};     // Firestore에서 받아온 맛집 데이터 캐시
@@ -1169,18 +1223,21 @@
 
     function selectDay(dayNum) {
       currentDaySelected = dayNum;
+      updateDayTabActiveStyles(dayNum);
+      renderTimeline(dayNum);
+    }
 
-      // Update day filter buttons
+    // 현재 선택된 DAY 탭에 강조(활성) 스타일 적용
+    function updateDayTabActiveStyles(dayNum) {
       for (let i = 1; i <= 5; i++) {
         const btn = document.getElementById(`day-btn-${i}`);
+        if (!btn) continue;
         if (i === dayNum) {
           btn.className = "day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-[#E07A5F] text-white shadow-sm";
         } else {
           btn.className = "day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 text-[#5C6079] hover:bg-gray-200";
         }
       }
-
-      renderTimeline(dayNum);
     }
 
     function initItinerary() {
@@ -1194,6 +1251,16 @@
         }
         itineraryCache = docSnap.data() || {};
         enforceCanonicalDates();
+
+        if (!hasAutoSelectedToday) {
+          hasAutoSelectedToday = true;
+          const todayDay = getTodayDayNumber();
+          if (todayDay) {
+            currentDaySelected = todayDay;
+            updateDayTabActiveStyles(todayDay);
+          }
+        }
+
         renderDayTabs();
         renderDashboardPreview();
         renderTimeline(currentDaySelected);
@@ -1238,12 +1305,13 @@
 
     // DAY 탭 버튼들의 라벨(날짜)을 최신 데이터로 갱신
     function renderDayTabs() {
+      const todayDay = getTodayDayNumber();
       for (let i = 1; i <= 5; i++) {
         const dk = 'day' + i;
         const d = itineraryCache[dk];
         const label = document.getElementById('day-btn-label-' + i);
         if (d && label) {
-          label.textContent = `${d.badge} (${d.shortDate || ''})`;
+          label.textContent = `${d.badge} (${d.shortDate || ''})` + (i === todayDay ? ' · 오늘' : '');
         }
       }
     }
@@ -1254,6 +1322,7 @@
       if (!container) return;
 
       const accentColors = ['#E07A5F', '#81B29A', '#8F5B00', '#3D405B', '#6C757D'];
+      const todayDay = getTodayDayNumber();
       let html = '';
 
       for (let i = 1; i <= 5; i++) {
@@ -1269,9 +1338,11 @@
 
         const teaser = orderedTitles.length > 0 ? orderedTitles.slice(0, 4).join(' ➔ ') : '아직 등록된 일정이 없습니다.';
         const color = accentColors[(i - 1) % accentColors.length];
+        const isToday = i === todayDay;
 
         html += `
-          <div onclick="switchTab('itinerary'); selectDay(${i});" class="bg-white p-4 rounded-xl border border-[#E8E1D7] hover:shadow-md transition-all cursor-pointer group">
+          <div onclick="switchTab('itinerary'); selectDay(${i});" class="relative bg-white p-4 rounded-xl border ${isToday ? 'border-[#E07A5F] ring-2 ring-[#E07A5F]/30' : 'border-[#E8E1D7]'} hover:shadow-md transition-all cursor-pointer group">
+            ${isToday ? `<span class="absolute -top-2 -right-2 bg-[#E07A5F] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">오늘</span>` : ''}
             <span class="text-xs font-bold block mb-1" style="color: ${color}">${escapeHtml(d.badge || ('DAY ' + i))} (${escapeHtml(d.shortDate || '')})</span>
             <h4 class="font-bold text-sm text-[#3D405B] transition-colors">${escapeHtml(d.title || '')}</h4>
             <p class="text-xs text-gray-500 mt-2 line-clamp-2">${escapeHtml(teaser)}</p>
