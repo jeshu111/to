@@ -1298,12 +1298,15 @@
       });
 
       let html = `
-        <div class="bg-white p-5 rounded-2xl border border-[#E8E1D7] flex items-center justify-between mb-4">
+        <div class="bg-white p-5 rounded-2xl border border-[#E8E1D7] flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
             <span class="text-xs font-extrabold px-2.5 py-1 rounded-md text-white mr-2" style="background-color: ${dayData.color}">${dayData.badge}</span>
             <span class="text-lg font-bold text-[#3D405B]">${dayData.date}</span>
           </div>
-          <h3 class="text-sm font-semibold text-[#E07A5F] hidden sm:block">${dayData.title}</h3>
+          <div class="flex items-center gap-1.5">
+            <h3 class="text-sm font-semibold text-[#E07A5F]">${escapeHtml(dayData.title || '')}</h3>
+            <button type="button" onclick="editDayTitle(${dayNum})" title="이 날의 제목 수정" class="text-gray-300 hover:text-[#E07A5F] text-xs px-1 transition-colors">✎</button>
+          </div>
         </div>
         <div class="relative pl-6 sm:pl-8 border-l-2 border-[#E8E1D7] space-y-6">
       `;
@@ -1456,6 +1459,23 @@
           console.warn('일정 순서 변경 실패:', e);
           alert('순서 변경에 실패했습니다.');
         });
+    }
+
+    // ✎ 버튼: 이 날의 헤드라인 제목을 직접 수정 (미리보기 카드에도 바로 반영됩니다)
+    function editDayTitle(dayNum) {
+      const dayKey = 'day' + dayNum;
+      const current = (itineraryCache[dayKey] && itineraryCache[dayKey].title) || '';
+      const next = prompt('이 날의 제목을 입력하세요 (미리보기 카드에도 표시됩니다):', current);
+      if (next === null) return; // 취소
+      const trimmed = next.trim();
+      if (!trimmed) {
+        alert('제목은 비워둘 수 없습니다.');
+        return;
+      }
+      itineraryDocRef.update({ [`${dayKey}.title`]: trimmed }).catch(function (e) {
+        console.warn('제목 수정 실패:', e);
+        alert('제목 수정에 실패했습니다.');
+      });
     }
 
     // < / > 버튼: 날짜(달력상 순서)는 각 DAY 자리에 고정하고,
