@@ -622,6 +622,40 @@
     const itineraryDocRef = db.collection('tokyoTrip').doc('itinerary');
     const gourmetDocRef = db.collection('tokyoTrip').doc('gourmet');
 
+    /* ======================================================== */
+    /* SYNC STATUS INDICATOR (오프라인 대비 안내)                  */
+    /* Firestore는 기기 로컬 캐시로도 동작하므로, 지금 보이는 데이터가  */
+    /* 서버와 실시간 동기화된 것인지 오프라인 캐시인지 알려줍니다.       */
+    /* ======================================================== */
+
+    const syncCacheFlags = { checklist: false, itinerary: false, gourmet: false, budget: false };
+    let lastSyncTime = null;
+
+    function reportSyncStatus(key, fromCache) {
+      syncCacheFlags[key] = !!fromCache;
+      if (!fromCache) lastSyncTime = new Date();
+      renderSyncStatus();
+    }
+
+    function renderSyncStatus() {
+      const dot = document.getElementById('sync-status-dot');
+      const text = document.getElementById('sync-status-text');
+      if (!dot || !text) return;
+
+      const isOffline = Object.values(syncCacheFlags).some(function (v) { return v; });
+      const timeStr = lastSyncTime
+        ? lastSyncTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+        : '-';
+
+      if (isOffline) {
+        dot.className = 'w-2 h-2 rounded-full bg-yellow-400';
+        text.textContent = `오프라인 모드 · 마지막 동기화 ${timeStr}`;
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-green-400';
+        text.textContent = `실시간 동기화됨 · ${timeStr}`;
+      }
+    }
+
     let isApplyingRemoteUpdate = false; // Firestore→화면 반영 시 change 이벤트가 다시 저장을 트리거하지 않도록 방지
 
     function escapeHtml(str) {
@@ -746,6 +780,7 @@
 
       // Firestore 문서가 바뀔 때마다(자신의 저장 포함, 상대방의 저장 포함) 실시간으로 화면에 반영
       checklistDocRef.onSnapshot(function (docSnap) {
+        reportSyncStatus('checklist', docSnap.metadata && docSnap.metadata.fromCache);
         const data = docSnap.exists ? docSnap.data() : {};
         isApplyingRemoteUpdate = true;
         items.forEach(function (el) {
@@ -1242,6 +1277,7 @@
 
     function initItinerary() {
       itineraryDocRef.onSnapshot(function (docSnap) {
+        reportSyncStatus('itinerary', docSnap.metadata && docSnap.metadata.fromCache);
         if (!docSnap.exists) {
           // 최초 방문: 기본 일정 데이터로 문서를 만들어 둡니다. (이후 onSnapshot이 다시 호출됨)
           itineraryDocRef.set(defaultItineraryData).catch(function (e) {
@@ -1680,6 +1716,7 @@
 
     function initGourmet() {
       gourmetDocRef.onSnapshot(function (docSnap) {
+        reportSyncStatus('gourmet', docSnap.metadata && docSnap.metadata.fromCache);
         if (!docSnap.exists) {
           gourmetDocRef.set(defaultGourmetSpots).catch(function (e) {
             console.warn('기본 맛집 데이터 생성 실패:', e);
@@ -2009,6 +2046,7 @@
 
       // Firestore 문서가 바뀔 때마다(항목 추가/삭제/금액 수정 포함) 실시간으로 화면 갱신
       budgetDocRef.onSnapshot(function (docSnap) {
+        reportSyncStatus('budget', docSnap.metadata && docSnap.metadata.fromCache);
         if (!docSnap.exists) {
           // 최초 방문: 기본 예산 항목으로 문서를 만들어 둡니다. (이후 onSnapshot이 다시 호출됨)
           budgetDocRef.set({ items: defaultBudgetItems }).catch(function (e) {
@@ -2027,5 +2065,11 @@
       });
     }
   </script>
+
+  <!-- 동기화 상태 표시 (오프라인/실시간 여부, 마지막 동기화 시각) -->
+  <div id="sync-status-indicator" class="fixed bottom-4 right-4 z-50 text-xs font-bold px-3 py-1.5 rounded-full shadow-md border flex items-center gap-1.5 bg-white border-[#E8E1D7] text-gray-500">
+    <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-gray-300"></span>
+    <span id="sync-status-text">연결 확인 중...</span>
+  </div>
 </body>
 </html>
