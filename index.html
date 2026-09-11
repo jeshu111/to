@@ -584,6 +584,21 @@
           </div>
         </div>
 
+        <!-- Emergency Contacts Card -->
+        <div class="bg-white p-6 rounded-2xl border border-[#E8E1D7] shadow-sm space-y-4 md:col-span-2">
+          <h3 class="font-bold text-[#3D405B] text-lg">🚨 비상연락처</h3>
+
+          <div id="emergency-contacts-list" class="space-y-2 text-sm">
+            <!-- Firestore 데이터로 자동 렌더링됩니다 -->
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-gray-100">
+            <input type="text" id="new-contact-label" placeholder="이름 (예: 여행자보험 콜센터)" class="text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+            <input type="text" id="new-contact-value" placeholder="번호/정보" class="text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+            <button type="button" onclick="addEmergencyContact()" class="bg-[#E07A5F] hover:bg-[#c9694f] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">+ 추가</button>
+          </div>
+        </div>
+
       </div>
 
     </section>
@@ -624,6 +639,7 @@
     // 일정(타임라인)과 미식지도도 같은 방식으로 공유 저장됩니다.
     const itineraryDocRef = db.collection('tokyoTrip').doc('itinerary');
     const gourmetDocRef = db.collection('tokyoTrip').doc('gourmet');
+    const emergencyDocRef = db.collection('tokyoTrip').doc('emergency');
 
     /* ======================================================== */
     /* SYNC STATUS INDICATOR (오프라인 대비 안내)                  */
@@ -631,7 +647,7 @@
     /* 서버와 실시간 동기화된 것인지 오프라인 캐시인지 알려줍니다.       */
     /* ======================================================== */
 
-    const syncCacheFlags = { checklist: false, itinerary: false, gourmet: false, budget: false };
+    const syncCacheFlags = { checklist: false, itinerary: false, gourmet: false, budget: false, emergency: false };
     let lastSyncTime = null;
 
     function reportSyncStatus(key, fromCache) {
@@ -804,6 +820,118 @@
     }
 
     document.addEventListener('DOMContentLoaded', initChecklist);
+
+    /* ======================================================== */
+    /* EMERGENCY CONTACTS (Firebase Firestore, 실시간 공유)         */
+    /* ======================================================== */
+
+    const defaultEmergencyContacts = {
+      contact_1: { label: '영사콜센터 (해외 위급상황, 24시간)', value: '+82-2-3210-0404', order: 10 },
+      contact_2: { label: '주일본 대한민국 대사관', value: '+81-3-3452-7611', order: 20 },
+      contact_3: { label: '일본 경찰 신고', value: '110', order: 30 },
+      contact_4: { label: '일본 구급차/소방', value: '119', order: 40 },
+      contact_5: { label: '여행자보험 콜센터', value: '', order: 50 },
+      contact_6: { label: '카드 분실신고 (카드사)', value: '', order: 60 }
+    };
+
+    let emergencyCache = {};
+
+    function initEmergencyContacts() {
+      emergencyDocRef.onSnapshot(function (docSnap) {
+        reportSyncStatus('emergency', docSnap.metadata && docSnap.metadata.fromCache);
+        if (!docSnap.exists) {
+          emergencyDocRef.set({ contacts: defaultEmergencyContacts }).catch(function (e) {
+            console.warn('기본 비상연락처 생성 실패:', e);
+          });
+          return;
+        }
+        const data = docSnap.data();
+        emergencyCache = data.contacts || {};
+        renderEmergencyContacts();
+      }, function (err) {
+        console.warn('비상연락처 실시간 동기화 오류:', err);
+        const container = document.getElementById('emergency-contacts-list');
+        if (container) {
+          container.innerHTML = '<p class="text-sm text-red-500 py-2">⚠️ 비상연락처를 불러오지 못했습니다. Firestore 규칙(Rules)을 확인해주세요.</p>';
+        }
+      });
+    }
+
+    function renderEmergencyContacts() {
+      const container = document.getElementById('emergency-contacts-list');
+      if (!container) return;
+
+      const ids = Object.keys(emergencyCache).sort(function (a, b) {
+        return (emergencyCache[a].order || 0) - (emergencyCache[b].order || 0);
+      });
+
+      if (ids.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-400 py-2">등록된 비상연락처가 없습니다.</p>';
+        return;
+      }
+
+      container.innerHTML = ids.map(function (id) {
+        const c = emergencyCache[id];
+        return `
+          <div class="flex items-center justify-between gap-2 bg-[#FAF7F2] border border-[#E8E1D7] rounded-lg px-3 py-2 group">
+            <span class="font-bold text-[#3D405B] shrink-0">${escapeHtml(c.label || '')}</span>
+            <span class="text-gray-500 text-right flex-1 truncate">${c.value ? escapeHtml(c.value) : '<span class="text-gray-300">미입력</span>'}</span>
+            <button type="button" onclick="editEmergencyContact('${id}')" title="수정" class="text-gray-300 hover:text-[#E07A5F] text-xs px-1 shrink-0">✎</button>
+            <button type="button" onclick="deleteEmergencyContact('${id}')" title="삭제" class="text-gray-300 hover:text-[#E07A5F] text-xs px-1 shrink-0">✕</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function addEmergencyContact() {
+      const labelInput = document.getElementById('new-contact-label');
+      const valueInput = document.getElementById('new-contact-value');
+      const label = labelInput.value.trim();
+      const value = valueInput.value.trim();
+      if (!label) {
+        alert('이름을 입력해주세요.');
+        return;
+      }
+
+      const id = 'contact_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+      const order = Date.now();
+
+      emergencyDocRef.set({ contacts: { [id]: { label: label, value: value, order: order } } }, { merge: true })
+        .then(function () {
+          labelInput.value = '';
+          valueInput.value = '';
+        })
+        .catch(function (e) {
+          console.warn('비상연락처 추가 실패:', e);
+          alert('연락처 추가에 실패했습니다. 인터넷 연결 또는 Firestore 설정을 확인해주세요.');
+        });
+    }
+
+    function editEmergencyContact(id) {
+      const c = emergencyCache[id];
+      if (!c) return;
+      const newLabel = prompt('이름:', c.label || '');
+      if (newLabel === null) return;
+      const newValue = prompt('번호/정보:', c.value || '');
+      if (newValue === null) return;
+
+      emergencyDocRef.set({ contacts: { [id]: { label: newLabel.trim(), value: newValue.trim() } } }, { merge: true })
+        .catch(function (e) {
+          console.warn('비상연락처 수정 실패:', e);
+          alert('연락처 수정에 실패했습니다.');
+        });
+    }
+
+    function deleteEmergencyContact(id) {
+      if (!confirm('이 연락처를 삭제할까요?')) return;
+      emergencyDocRef.update({ [`contacts.${id}`]: firebase.firestore.FieldValue.delete() })
+        .catch(function (e) {
+          console.warn('비상연락처 삭제 실패:', e);
+          alert('연락처 삭제에 실패했습니다.');
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initEmergencyContacts);
 
     /* ======================================================== */
     /* DATA STORAGE FOR ITINERARY & GOURMET                     */
