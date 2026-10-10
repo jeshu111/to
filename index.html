@@ -421,7 +421,7 @@
         <!-- Interactive Chart 1: Doughnut Expense Allocation -->
         <div class="bg-white p-6 rounded-2xl border border-[#E8E1D7] shadow-sm">
           <h3 class="font-bold text-[#3D405B] mb-2 text-center">📊 카테고리별 예산 비중 시각화</h3>
-          <p class="text-xs text-gray-500 text-center mb-4">입력한 항목별 예상 지출 비중 (Chart.js)</p>
+          <p class="text-xs text-gray-500 text-center mb-4">입력한 항목별 지출 비중 (엔화 항목은 원화로 환산해 표시)</p>
           
           <!-- Canvas Responsive Container -->
           <div class="chart-container">
@@ -438,37 +438,59 @@
 
           <div id="budget-items-container" class="space-y-3 text-sm"></div>
 
-          <!-- 새 예산 카테고리 추가 -->
-          <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
+          <!-- 새 예산 항목 추가 -->
+          <div class="space-y-2 pt-3 border-t border-gray-100">
             <input
               type="text"
               id="new-budget-label"
-              placeholder="항목명 (예: 기념품)"
-              class="flex-1 min-w-0 text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"
+              placeholder="항목명 (예: 해리포터 스튜디오)"
+              class="w-full text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"
             >
-            <input
-              type="number"
-              id="new-budget-amount"
-              placeholder="금액(원)"
-              class="w-28 text-right text-sm border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"
-            >
-            <button
-              type="button"
-              onclick="addBudgetItem()"
-              class="shrink-0 bg-[#E07A5F] hover:bg-[#c9694f] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors"
-            >+ 추가</button>
+            <div class="flex items-center gap-2 flex-wrap">
+              <select id="new-budget-payer" class="text-sm border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"></select>
+              <select id="new-budget-currency" class="text-sm border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+                <option value="KRW">원 (₩)</option>
+                <option value="JPY">엔 (¥)</option>
+              </select>
+              <input
+                type="number"
+                id="new-budget-amount"
+                placeholder="금액"
+                class="flex-1 min-w-[5rem] text-right text-sm border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"
+              >
+              <button
+                type="button"
+                onclick="addBudgetItem()"
+                class="shrink-0 bg-[#E07A5F] hover:bg-[#c9694f] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors"
+              >+ 추가</button>
+            </div>
           </div>
 
-          <!-- Total Calculation Display Card -->
-          <div class="bg-[#FAF7F2] p-4 rounded-xl border border-[#E8E1D7] flex items-center justify-between mt-4">
-            <div>
-              <span class="text-xs text-gray-500 font-bold block">총 예상 합계 (2인)</span>
-              <span id="total-krw" class="text-xl font-extrabold text-[#E07A5F]">2,430,000 원</span>
+          <!-- 총 합계 (원화 / 엔화 따로) -->
+          <div class="bg-[#FAF7F2] p-4 rounded-xl border border-[#E8E1D7] mt-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <span class="text-xs text-gray-500 font-bold block">총 합계 · 원화</span>
+                <span id="total-krw" class="text-xl font-extrabold text-[#E07A5F]">0 원</span>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-gray-500 font-bold block">총 합계 · 엔화</span>
+                <span id="total-jpy" class="text-xl font-extrabold text-[#3D405B]">0 엔</span>
+              </div>
             </div>
-            <div class="text-right">
-              <span class="text-xs text-gray-500 block">예상 엔화 환전 필요액</span>
-              <span id="total-jpy" class="text-base font-bold text-[#3D405B]">약 138,000 엔</span>
+            <p class="text-[11px] text-gray-400 mt-2 pt-2 border-t border-[#E8E1D7]">
+              원화 환산 합계 약 <span id="total-combined-krw" class="font-bold text-gray-500">0 원</span> (100엔 = 900원 기준)
+            </p>
+          </div>
+
+          <!-- 정산 현황 -->
+          <div class="bg-white p-4 rounded-xl border border-[#E8E1D7] space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <h4 class="font-bold text-[#3D405B] text-sm">💸 정산 현황</h4>
+              <button type="button" onclick="settleAllBudgetItems()" class="text-[11px] font-bold text-gray-500 hover:text-[#E07A5F] border border-[#E8E1D7] rounded-lg px-2 py-1 transition-colors">전부 정산완료 처리</button>
             </div>
+            <div id="settlement-summary" class="space-y-2 text-sm"></div>
+            <p class="text-[11px] text-gray-400">※ 지불자가 지정되고 아직 '정산완료'가 아닌 항목을 2인 50:50으로 나눈 기준이며, 원화·엔화는 따로 계산합니다.</p>
           </div>
         </div>
 
@@ -2072,11 +2094,15 @@
 
     /* ======================================================== */
     /* CHART.JS BUDGET ANALYTICS & CALCULATOR LOGIC (Firestore)  */
-    /* 항목 추가/삭제/금액 수정이 모두 실시간으로 공유 저장됩니다.       */
+    /* 항목 추가/삭제, 금액·지불자·통화·정산 여부가 실시간 저장됩니다.   */
     /* ======================================================== */
 
     let budgetItemsCache = {};
+    let budgetChartMeta = [];
     const budgetSaveTimers = {};
+
+    const JPY_TO_KRW = 9;                  // 1엔 = 9원 (100엔 = 900원 기준, 차트 환산용)
+    const PAYERS = ['선규', '수향'];        // 지불자 목록 (정산은 이 2명 기준 50:50)
 
     const budgetColors = ['#E07A5F', '#3D405B', '#F2CC8F', '#81B29A', '#6C757D', '#D8D0C5', '#9C89B8', '#5FA8D3'];
 
@@ -2090,19 +2116,70 @@
       shopping: { label: '🛍️ 쇼핑 & 예비비', amount: 300000, order: 6 }
     };
 
-    function renderBudgetItems(items) {
-      const container = document.getElementById('budget-items-container');
-      const ids = Object.keys(items).sort(function (a, b) {
+    // 예전 데이터(통화/지불자/정산 필드가 없는 항목)도 안전하게 읽기 위한 보정
+    function normalizeBudgetItem(item) {
+      item = item || {};
+      return {
+        label: item.label || '',
+        amount: Number(item.amount) || 0,
+        currency: item.currency === 'JPY' ? 'JPY' : 'KRW',
+        payer: PAYERS.indexOf(item.payer) !== -1 ? item.payer : '',
+        settled: !!item.settled,
+        order: item.order || 0
+      };
+    }
+
+    function formatMoney(n, currency) {
+      return Math.round(n).toLocaleString() + (currency === 'JPY' ? ' 엔' : ' 원');
+    }
+
+    function sortedBudgetIds(items) {
+      return Object.keys(items).sort(function (a, b) {
         return (items[a].order || 0) - (items[b].order || 0);
       });
+    }
+
+    function saveBudgetField(id, field, value) {
+      budgetDocRef.set({ items: { [id]: { [field]: value } } }, { merge: true })
+        .catch(function (e) {
+          console.warn('예산 저장 실패:', e);
+          alert('저장에 실패했습니다. 인터넷 연결 또는 Firestore 설정을 확인해주세요.');
+        });
+    }
+
+    function renderBudgetItems(items) {
+      const container = document.getElementById('budget-items-container');
+      const ids = sortedBudgetIds(items);
+
+      if (ids.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-400 py-2">등록된 예산 항목이 없습니다. 아래에서 추가해 보세요.</p>';
+        return;
+      }
 
       container.innerHTML = ids.map(function (id) {
-        const item = items[id];
+        const it = normalizeBudgetItem(items[id]);
+        const payerOptions = ['<option value="">지불자 미지정</option>'].concat(PAYERS.map(function (p) {
+          return `<option value="${p}" ${it.payer === p ? 'selected' : ''}>${p}</option>`;
+        })).join('');
+        const settleCls = it.settled
+          ? 'bg-[#81B29A] border-[#81B29A] text-white'
+          : 'bg-white border-gray-300 text-gray-500 hover:border-[#81B29A]';
+
         return `
-          <div class="flex items-center justify-between gap-2 border-b pb-2 group">
-            <span class="font-medium text-gray-700 flex-1 truncate">${escapeHtml(item.label || '')}</span>
-            <input type="number" data-budget-id="${id}" value="${Number(item.amount) || 0}" class="budget-amount-input w-28 text-right px-2 py-1 border rounded text-xs font-bold">
-            <button type="button" data-delete-budget-id="${id}" title="삭제" class="delete-budget-item text-gray-300 hover:text-[#E07A5F] text-sm px-1 opacity-70 group-hover:opacity-100 transition-opacity">✕</button>
+          <div class="border-b pb-3 ${it.settled ? 'opacity-60' : ''}">
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="font-medium text-gray-700 flex-1 truncate ${it.settled ? 'line-through' : ''}">${escapeHtml(it.label)}</span>
+              <button type="button" data-delete-budget-id="${id}" title="삭제" class="delete-budget-item text-gray-300 hover:text-[#E07A5F] text-sm px-1">✕</button>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <select data-budget-payer-id="${id}" class="budget-payer-select text-xs border rounded px-1.5 py-1 ${it.payer ? 'font-bold text-[#3D405B]' : 'text-gray-400'}">${payerOptions}</select>
+              <select data-budget-currency-id="${id}" class="budget-currency-select text-xs border rounded px-1.5 py-1">
+                <option value="KRW" ${it.currency === 'KRW' ? 'selected' : ''}>원</option>
+                <option value="JPY" ${it.currency === 'JPY' ? 'selected' : ''}>엔</option>
+              </select>
+              <input type="number" data-budget-id="${id}" value="${it.amount}" class="budget-amount-input flex-1 min-w-[5rem] text-right px-2 py-1 border rounded text-xs font-bold">
+              <button type="button" data-budget-settle-id="${id}" class="budget-settle-btn text-[11px] font-bold border rounded-full px-2.5 py-1 transition-colors ${settleCls}">${it.settled ? '✓ 정산완료' : '미정산'}</button>
+            </div>
           </div>
         `;
       }).join('');
@@ -2123,10 +2200,41 @@
         });
       });
 
+      // 지불자 변경
+      container.querySelectorAll('.budget-payer-select').forEach(function (el) {
+        el.addEventListener('change', function () {
+          const id = el.dataset.budgetPayerId;
+          if (budgetItemsCache[id]) budgetItemsCache[id].payer = el.value;
+          updateBudgetSummary(budgetItemsCache);
+          saveBudgetField(id, 'payer', el.value);
+        });
+      });
+
+      // 통화(원/엔) 변경
+      container.querySelectorAll('.budget-currency-select').forEach(function (el) {
+        el.addEventListener('change', function () {
+          const id = el.dataset.budgetCurrencyId;
+          if (budgetItemsCache[id]) budgetItemsCache[id].currency = el.value;
+          updateBudgetSummary(budgetItemsCache);
+          saveBudgetField(id, 'currency', el.value);
+        });
+      });
+
+      // 정산완료 토글
+      container.querySelectorAll('.budget-settle-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const id = btn.dataset.budgetSettleId;
+          const next = !normalizeBudgetItem(budgetItemsCache[id]).settled;
+          if (budgetItemsCache[id]) budgetItemsCache[id].settled = next;
+          saveBudgetField(id, 'settled', next);
+        });
+      });
+
       // 삭제 버튼 → Firestore에서 해당 항목 제거
       container.querySelectorAll('.delete-budget-item').forEach(function (btn) {
         btn.addEventListener('click', function () {
           const id = btn.dataset.deleteBudgetId;
+          if (!confirm('이 예산 항목을 삭제할까요?')) return;
           budgetDocRef.update({ [`items.${id}`]: firebase.firestore.FieldValue.delete() })
             .catch(function (e) {
               console.warn('예산 항목 삭제 실패:', e);
@@ -2136,19 +2244,70 @@
       });
     }
 
-    function updateBudgetSummary(items) {
-      const ids = Object.keys(items).sort(function (a, b) {
-        return (items[a].order || 0) - (items[b].order || 0);
+    // 원화/엔화 각각 "미정산 + 지불자 지정" 항목만 모아 2인 50:50 정산액 계산
+    function renderSettlement(list) {
+      const box = document.getElementById('settlement-summary');
+      if (!box) return;
+
+      const A = PAYERS[0], B = PAYERS[1];
+      const unassigned = list.filter(function (n) { return !n.settled && !n.payer; }).length;
+
+      const blocks = ['KRW', 'JPY'].map(function (cur) {
+        const open = list.filter(function (n) { return n.currency === cur && !n.settled && n.payer; });
+        const paidA = open.filter(function (n) { return n.payer === A; }).reduce(function (s, n) { return s + n.amount; }, 0);
+        const paidB = open.filter(function (n) { return n.payer === B; }).reduce(function (s, n) { return s + n.amount; }, 0);
+        const title = cur === 'KRW' ? '원화 (₩)' : '엔화 (¥)';
+
+        let detail = '';
+        let result;
+        if (open.length === 0) {
+          result = '<span class="text-gray-400 font-medium">정산할 내역 없음 ✅</span>';
+        } else {
+          detail = `<div class="text-xs text-gray-500 mt-1">${A} ${formatMoney(paidA, cur)} · ${B} ${formatMoney(paidB, cur)} 지불 (미정산 ${open.length}건)</div>`;
+          const diff = paidA - paidB;
+          const amt = Math.round(Math.abs(diff) / 2);
+          if (amt === 0) {
+            result = '<span class="text-[#81B29A] font-bold">서로 정산할 금액 없음 ✅</span>';
+          } else {
+            const from = diff > 0 ? B : A;
+            const to = diff > 0 ? A : B;
+            result = `<span class="font-extrabold text-[#E07A5F]">${from} → ${to} ${formatMoney(amt, cur)}</span>`;
+          }
+        }
+
+        return `
+          <div class="bg-[#FAF7F2] border border-[#E8E1D7] rounded-lg p-3">
+            <div class="text-xs font-bold text-gray-500">${title}</div>
+            ${detail}
+            <div class="mt-1.5">${result}</div>
+          </div>
+        `;
       });
-      const labels = ids.map(function (id) { return items[id].label || ''; });
-      const values = ids.map(function (id) { return Number(items[id].amount) || 0; });
-      const colors = ids.map(function (_, i) { return budgetColors[i % budgetColors.length]; });
 
-      const totalKRW = values.reduce(function (sum, v) { return sum + v; }, 0);
-      const totalJPY = Math.round(totalKRW / 9);
+      let note = '';
+      if (unassigned > 0) {
+        note = `<p class="text-[11px] text-amber-600">⚠️ 지불자가 지정되지 않은 미정산 항목 ${unassigned}건은 정산 계산에서 제외됩니다.</p>`;
+      }
+      box.innerHTML = blocks.join('') + note;
+    }
 
-      document.getElementById('total-krw').innerText = `${totalKRW.toLocaleString()} 원`;
-      document.getElementById('total-jpy').innerText = `약 ${totalJPY.toLocaleString()} 엔`;
+    function updateBudgetSummary(items) {
+      const ids = sortedBudgetIds(items);
+      const norm = ids.map(function (id) { return normalizeBudgetItem(items[id]); });
+
+      const labels = norm.map(function (n) { return n.label; });
+      const values = norm.map(function (n) { return n.currency === 'JPY' ? n.amount * JPY_TO_KRW : n.amount; });
+      const colors = norm.map(function (_, i) { return budgetColors[i % budgetColors.length]; });
+      budgetChartMeta = norm;
+
+      const totalKRW = norm.filter(function (n) { return n.currency === 'KRW'; }).reduce(function (s, n) { return s + n.amount; }, 0);
+      const totalJPY = norm.filter(function (n) { return n.currency === 'JPY'; }).reduce(function (s, n) { return s + n.amount; }, 0);
+      const combinedKRW = totalKRW + totalJPY * JPY_TO_KRW;
+
+      document.getElementById('total-krw').innerText = formatMoney(totalKRW, 'KRW');
+      document.getElementById('total-jpy').innerText = formatMoney(totalJPY, 'JPY');
+      const combinedEl = document.getElementById('total-combined-krw');
+      if (combinedEl) combinedEl.innerText = formatMoney(combinedKRW, 'KRW');
 
       if (budgetChartInstance) {
         budgetChartInstance.data.labels = labels;
@@ -2156,12 +2315,16 @@
         budgetChartInstance.data.datasets[0].backgroundColor = colors;
         budgetChartInstance.update();
       }
+
+      renderSettlement(norm);
     }
 
-    // 새 예산 카테고리 추가 버튼
+    // 새 예산 항목 추가 버튼
     function addBudgetItem() {
       const labelInput = document.getElementById('new-budget-label');
       const amountInput = document.getElementById('new-budget-amount');
+      const payer = document.getElementById('new-budget-payer').value;
+      const currency = document.getElementById('new-budget-currency').value === 'JPY' ? 'JPY' : 'KRW';
       const label = labelInput.value.trim();
       const amount = Number(amountInput.value) || 0;
       if (!label) return;
@@ -2169,7 +2332,7 @@
       const id = 'custom_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
       const order = Date.now();
 
-      budgetDocRef.set({ items: { [id]: { label: label, amount: amount, order: order } } }, { merge: true })
+      budgetDocRef.set({ items: { [id]: { label: label, amount: amount, currency: currency, payer: payer, settled: false, order: order } } }, { merge: true })
         .then(function () {
           labelInput.value = '';
           amountInput.value = '';
@@ -2181,7 +2344,34 @@
         });
     }
 
+    // 지불자가 지정된 미정산 항목을 한 번에 정산완료로 표시 (송금 후 사용)
+    function settleAllBudgetItems() {
+      const targets = Object.keys(budgetItemsCache).filter(function (id) {
+        const n = normalizeBudgetItem(budgetItemsCache[id]);
+        return n.payer && !n.settled;
+      });
+      if (targets.length === 0) {
+        alert('정산완료로 표시할 미정산 항목이 없습니다.');
+        return;
+      }
+      if (!confirm(`지불자가 지정된 미정산 항목 ${targets.length}건을 모두 '정산완료'로 표시할까요?`)) return;
+
+      const updates = {};
+      targets.forEach(function (id) { updates[`items.${id}.settled`] = true; });
+      budgetDocRef.update(updates).catch(function (e) {
+        console.warn('일괄 정산 처리 실패:', e);
+        alert('정산 처리에 실패했습니다.');
+      });
+    }
+
     function initBudgetChart() {
+      // 추가 폼의 지불자 선택지를 PAYERS 기준으로 채움
+      const newPayerSelect = document.getElementById('new-budget-payer');
+      if (newPayerSelect) {
+        newPayerSelect.innerHTML = '<option value="">지불자 미지정</option>' +
+          PAYERS.map(function (p) { return `<option value="${p}">${p}</option>`; }).join('');
+      }
+
       const ctx = document.getElementById('budgetDoughnutChart').getContext('2d');
 
       budgetChartInstance = new Chart(ctx, {
@@ -2209,8 +2399,12 @@
             tooltip: {
               callbacks: {
                 label: function(context) {
-                  const val = context.raw || 0;
-                  return ` ${context.label}: ${val.toLocaleString()} 원`;
+                  const krw = context.raw || 0;
+                  const meta = budgetChartMeta[context.dataIndex];
+                  if (meta && meta.currency === 'JPY') {
+                    return ` ${context.label}: ${meta.amount.toLocaleString()} 엔 (≈ ${krw.toLocaleString()} 원)`;
+                  }
+                  return ` ${context.label}: ${krw.toLocaleString()} 원`;
                 }
               }
             }
