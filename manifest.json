@@ -1,7 +1,7 @@
 {
-  "name": "도쿄 4박 5일 커플 여행",
-  "short_name": "도쿄 트립",
-  "description": "도쿄 4박 5일 커플 로맨틱 & 미식 여행 대시보드",
+  "name": "여행 대시보드",
+  "short_name": "여행 트립",
+  "description": "일정·맛집·예산·정산·체크리스트를 함께 관리하는 여행 대시보드",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
