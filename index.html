@@ -29,7 +29,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="theme-color" content="#E07A5F">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="여행 대시보드">
   
   <!-- Tailwind CSS CDN -->
@@ -96,12 +96,13 @@
   <!-- TOP NAVIGATION HEADER -->
   <header class="sticky top-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E8E1D7] shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between gap-3 h-16 sm:h-[4.5rem]">
-        <div class="flex items-center space-x-3 min-w-0 flex-1">
-          <span id="trip-emoji" class="text-2xl sm:text-3xl">✈️</span>
+      <div class="flex items-center justify-between gap-3 min-h-[3.5rem] py-2 sm:py-0 sm:h-[4.5rem]">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <span id="trip-emoji" class="text-2xl sm:text-3xl shrink-0">✈️</span>
           <div class="min-w-0">
-            <h1 id="trip-title" class="font-bold text-lg sm:text-xl text-[#3D405B] tracking-tight truncate">여행 대시보드</h1>
-            <div class="flex items-center gap-2 flex-wrap">
+            <h1 id="trip-title" class="font-bold text-base sm:text-xl text-[#3D405B] tracking-tight truncate">여행 대시보드</h1>
+            <!-- 데스크톱: 제목 아래에 날짜 + D-day -->
+            <div class="hidden sm:flex items-center gap-2 flex-wrap">
               <p id="trip-dates-text" class="text-xs text-[#E07A5F] font-medium"></p>
               <span id="dday-badge" class="inline-flex items-center text-[10px] sm:text-xs font-extrabold px-2 py-0.5 rounded-full bg-[#E07A5F] text-white whitespace-nowrap"></span>
             </div>
@@ -110,15 +111,21 @@
 
         <div class="flex items-center gap-2 shrink-0">
           <!-- 여행 관리 (목록 · 새 여행 · 보관 · 백업) -->
-        <button type="button" id="trip-manager-btn" onclick="openTripManager()" class="shrink-0 px-3 py-2 rounded-lg text-sm font-semibold text-[#3D405B] bg-white border border-[#E8E1D7] hover:border-[#E07A5F] hover:text-[#E07A5F] transition-all">🗂️<span class="hidden sm:inline"> 여행 관리</span></button>
+          <button type="button" id="trip-manager-btn" onclick="openTripManager()" class="shrink-0 h-10 min-w-[2.5rem] px-2.5 sm:px-3 rounded-lg text-sm font-semibold text-[#3D405B] bg-white border border-[#E8E1D7] hover:border-[#E07A5F] hover:text-[#E07A5F] transition-all flex items-center justify-center">🗂️<span class="hidden sm:inline"> 여행 관리</span></button>
 
           <!-- Mobile Menu Toggle Button -->
-        <div class="lg:hidden">
-          <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="p-2 text-[#3D405B] hover:bg-[#F2EAE1] rounded-lg">
+          <div class="lg:hidden">
+            <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="h-10 w-10 flex items-center justify-center text-[#3D405B] hover:bg-[#F2EAE1] rounded-lg">
             <span class="text-xl">☰</span>
           </button>
+          </div>
         </div>
-        </div>
+      </div>
+
+      <!-- 모바일: 날짜 + D-day 한 줄 (제목 줄 아래) -->
+      <div class="sm:hidden flex items-center justify-between gap-2 pb-2 -mt-1">
+        <p id="trip-dates-text-m" class="text-[11px] text-[#E07A5F] font-medium truncate"></p>
+        <span id="dday-badge-m" class="inline-flex items-center text-[10px] sm:text-xs font-extrabold px-2 py-0.5 rounded-full bg-[#E07A5F] text-white whitespace-nowrap"></span>
       </div>
 
       <!-- Desktop Navigation Tabs (2번째 줄) -->
@@ -888,6 +895,15 @@
       const endText = s.getFullYear() === e.getFullYear() ? fmtShort(e) : fmtLong(e);
       return fmtLong(s) + ' ~ ' + endText + ' | ' + nightsText(tripNumDays(t));
     }
+    // 모바일용 짧은 표기: 10/29(목) ~ 11/2(월) · 4박 5일 (해가 바뀌면 연도 두 자리 표시)
+    function fmtTripRangeCompact(t) {
+      const s = parseYmd(t.startDate), e = parseYmd(t.endDate);
+      const wd = function (d) { return WEEKDAYS[d.getDay()]; };
+      const yy = function (d) { return String(d.getFullYear()).slice(2) + '.'; };
+      const same = s.getFullYear() === e.getFullYear();
+      const part = function (d) { return (same ? '' : yy(d)) + (d.getMonth() + 1) + (same ? '/' : '.') + d.getDate() + '(' + wd(d) + ')'; };
+      return part(s) + ' ~ ' + part(e) + ' · ' + nightsText(tripNumDays(t));
+    }
     function tripHasEnded(t) { return todayMidnight() > parseYmd(t.endDate); }
 
     function isLegacyTrip() { return currentTripId === LEGACY_TRIP_ID; }
@@ -1129,6 +1145,7 @@
       setText('trip-title', t.name + ' 대시보드');
       const titleEl = el('trip-title'); if (titleEl) titleEl.title = t.name + ' 대시보드';
       setText('trip-dates-text', fmtTripRange(t));
+      setText('trip-dates-text-m', fmtTripRangeCompact(t));
       document.title = emoji + ' ' + t.name + ' 대시보드';
 
       setText('overview-title', emoji + ' ' + t.name);
@@ -1941,29 +1958,34 @@
 
     // 헤더의 D-day 배지 계산 및 표시
     function renderDdayBadge() {
-      const badge = document.getElementById('dday-badge');
-      if (!badge || !currentTrip) return;
-      const base = 'inline-flex items-center text-[10px] sm:text-xs font-extrabold px-2 py-0.5 rounded-full text-white whitespace-nowrap';
+      if (!currentTrip) return;
+      const base = 'inline-flex items-center text-[10px] sm:text-xs font-extrabold px-2 py-0.5 rounded-full text-white whitespace-nowrap shrink-0';
 
       const today = todayMidnight();
       const start = parseYmd(currentTrip.startDate);
       const end = parseYmd(currentTrip.endDate);
       const diff = diffInDays(today, start);
 
+      let text, cls;
       if (isReadOnly()) {
-        badge.textContent = '📦 보관됨';
-        badge.className = base + ' bg-gray-400';
+        text = '📦 보관됨'; cls = base + ' bg-gray-400';
       } else if (today > end) {
-        badge.textContent = '✅ 여행 종료';
-        badge.className = base + ' bg-gray-400';
+        text = '✅ 여행 종료'; cls = base + ' bg-gray-400';
       } else if (today >= start) {
         const todayDay = getTodayDayNumber();
-        badge.textContent = todayDay ? `🎉 여행 중 · DAY ${todayDay}` : '🎉 여행 중';
-        badge.className = base + ' bg-[#81B29A] animate-pulse';
+        text = todayDay ? `🎉 여행 중 · DAY ${todayDay}` : '🎉 여행 중';
+        cls = base + ' bg-[#81B29A] animate-pulse';
       } else {
-        badge.textContent = `✈️ 출발까지 D-${diff}`;
-        badge.className = base + ' bg-[#E07A5F]';
+        text = `✈️ 출발까지 D-${diff}`; cls = base + ' bg-[#E07A5F]';
       }
+
+      // 데스크톱(제목 아래) / 모바일(날짜 줄) 두 곳 모두 갱신
+      ['dday-badge', 'dday-badge-m'].forEach(function (id) {
+        const badge = document.getElementById(id);
+        if (!badge) return;
+        badge.textContent = text;
+        badge.className = cls;
+      });
     }
 
     let budgetChartInstance = null;
