@@ -96,11 +96,11 @@
   <!-- TOP NAVIGATION HEADER -->
   <header class="sticky top-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E8E1D7] shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16 sm:h-20">
-        <div class="flex items-center space-x-3">
+      <div class="flex items-center justify-between gap-3 h-16 sm:h-[4.5rem]">
+        <div class="flex items-center space-x-3 min-w-0 flex-1">
           <span id="trip-emoji" class="text-2xl sm:text-3xl">✈️</span>
-          <div>
-            <h1 id="trip-title" class="font-bold text-lg sm:text-xl text-[#3D405B] tracking-tight">여행 대시보드</h1>
+          <div class="min-w-0">
+            <h1 id="trip-title" class="font-bold text-lg sm:text-xl text-[#3D405B] tracking-tight truncate">여행 대시보드</h1>
             <div class="flex items-center gap-2 flex-wrap">
               <p id="trip-dates-text" class="text-xs text-[#E07A5F] font-medium"></p>
               <span id="dday-badge" class="inline-flex items-center text-[10px] sm:text-xs font-extrabold px-2 py-0.5 rounded-full bg-[#E07A5F] text-white whitespace-nowrap"></span>
@@ -108,26 +108,28 @@
           </div>
         </div>
 
-        <!-- Desktop Navigation Tabs -->
-        <nav class="hidden lg:flex space-x-1 lg:space-x-2">
-          <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition-all text-[#E07A5F] bg-[#F2EAE1]">📌 여행 요약</button>
-          <button onclick="switchTab('itinerary')" id="nav-itinerary" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">🗓️ 일자별 일정</button>
-          <button onclick="switchTab('gourmet')" id="nav-gourmet" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">🍽️ 미식 지도</button>
-          <button onclick="switchTab('budget')" id="nav-budget" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">💰 예산 & 분석</button>
-          <button onclick="switchTab('checklist')" id="nav-checklist" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">🎒 준비물 & 팁</button>
-          <button onclick="switchTab('calendar')" id="nav-calendar" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">💑 커플 캘린더</button>
-        </nav>
-
-        <!-- 여행 관리 (목록 · 새 여행 · 보관 · 백업) -->
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- 여행 관리 (목록 · 새 여행 · 보관 · 백업) -->
         <button type="button" id="trip-manager-btn" onclick="openTripManager()" class="shrink-0 px-3 py-2 rounded-lg text-sm font-semibold text-[#3D405B] bg-white border border-[#E8E1D7] hover:border-[#E07A5F] hover:text-[#E07A5F] transition-all">🗂️<span class="hidden sm:inline"> 여행 관리</span></button>
 
-        <!-- Mobile Menu Toggle Button -->
+          <!-- Mobile Menu Toggle Button -->
         <div class="lg:hidden">
           <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="p-2 text-[#3D405B] hover:bg-[#F2EAE1] rounded-lg">
             <span class="text-xl">☰</span>
           </button>
         </div>
+        </div>
       </div>
+
+      <!-- Desktop Navigation Tabs (2번째 줄) -->
+        <nav class="hidden lg:flex items-center gap-1 border-t border-[#EFE8DE] py-1.5 overflow-x-auto">
+          <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all text-[#E07A5F] bg-[#F2EAE1]">📌 여행 요약</button>
+          <button onclick="switchTab('itinerary')" id="nav-itinerary" class="nav-btn whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">🗓️ 일자별 일정</button>
+          <button onclick="switchTab('gourmet')" id="nav-gourmet" class="nav-btn whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">🍽️ 미식 지도</button>
+          <button onclick="switchTab('budget')" id="nav-budget" class="nav-btn whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">💰 예산 & 분석</button>
+          <button onclick="switchTab('checklist')" id="nav-checklist" class="nav-btn whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">🎒 준비물 & 팁</button>
+          <button onclick="switchTab('calendar')" id="nav-calendar" class="nav-btn whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">💑 커플 캘린더</button>
+        </nav>
     </div>
 
     <!-- Mobile Dropdown Navigation -->
@@ -1125,6 +1127,7 @@
       const emoji = t.emoji || '✈️';
       setText('trip-emoji', emoji);
       setText('trip-title', t.name + ' 대시보드');
+      const titleEl = el('trip-title'); if (titleEl) titleEl.title = t.name + ' 대시보드';
       setText('trip-dates-text', fmtTripRange(t));
       document.title = emoji + ' ' + t.name + ' 대시보드';
 
