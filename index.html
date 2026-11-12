@@ -109,19 +109,20 @@
         </div>
 
         <!-- Desktop Navigation Tabs -->
-        <nav class="hidden md:flex space-x-1 lg:space-x-2">
+        <nav class="hidden lg:flex space-x-1 lg:space-x-2">
           <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition-all text-[#E07A5F] bg-[#F2EAE1]">📌 여행 요약</button>
           <button onclick="switchTab('itinerary')" id="nav-itinerary" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">🗓️ 일자별 일정</button>
           <button onclick="switchTab('gourmet')" id="nav-gourmet" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">🍽️ 미식 지도</button>
           <button onclick="switchTab('budget')" id="nav-budget" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">💰 예산 & 분석</button>
           <button onclick="switchTab('checklist')" id="nav-checklist" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">🎒 준비물 & 팁</button>
+          <button onclick="switchTab('calendar')" id="nav-calendar" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-[#6C757D] hover:text-[#3D405B] hover:bg-[#F2EAE1] transition-all">💑 커플 캘린더</button>
         </nav>
 
         <!-- 여행 관리 (목록 · 새 여행 · 보관 · 백업) -->
         <button type="button" id="trip-manager-btn" onclick="openTripManager()" class="shrink-0 px-3 py-2 rounded-lg text-sm font-semibold text-[#3D405B] bg-white border border-[#E8E1D7] hover:border-[#E07A5F] hover:text-[#E07A5F] transition-all">🗂️<span class="hidden sm:inline"> 여행 관리</span></button>
 
         <!-- Mobile Menu Toggle Button -->
-        <div class="md:hidden">
+        <div class="lg:hidden">
           <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="p-2 text-[#3D405B] hover:bg-[#F2EAE1] rounded-lg">
             <span class="text-xl">☰</span>
           </button>
@@ -130,12 +131,13 @@
     </div>
 
     <!-- Mobile Dropdown Navigation -->
-    <div id="mobile-menu" class="hidden md:hidden bg-[#FAF7F2] border-b border-[#E8E1D7] px-4 pt-2 pb-4 space-y-1">
+    <div id="mobile-menu" class="hidden lg:hidden bg-[#FAF7F2] border-b border-[#E8E1D7] px-4 pt-2 pb-4 space-y-1">
       <button onclick="switchTab('overview'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-[#3D405B] hover:bg-[#F2EAE1]">📌 여행 요약</button>
       <button onclick="switchTab('itinerary'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-[#3D405B] hover:bg-[#F2EAE1]">🗓️ 일자별 일정</button>
       <button onclick="switchTab('gourmet'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-[#3D405B] hover:bg-[#F2EAE1]">🍽️ 미식 & 디저트 지도</button>
       <button onclick="switchTab('budget'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-[#3D405B] hover:bg-[#F2EAE1]">💰 예산 계산기 & 차트</button>
       <button onclick="switchTab('checklist'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-[#3D405B] hover:bg-[#F2EAE1]">🎒 준비물 & 교통 팁</button>
+      <button onclick="switchTab('calendar'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-[#3D405B] hover:bg-[#F2EAE1]">💑 커플 캘린더</button>
     </div>
   </header>
 
@@ -656,6 +658,109 @@
 
     </section>
 
+
+    <!-- ========================================== -->
+    <!-- SECTION 6: COUPLE CALENDAR (커플 캘린더)    -->
+    <!-- ========================================== -->
+    <section id="sec-calendar" class="tab-content hidden space-y-6">
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h2 class="text-2xl font-bold text-[#3D405B]">💑 커플 캘린더</h2>
+          <p class="text-sm text-[#5C6079] mt-1">데이트·기념일·약속을 둘이 함께 관리해요. 여행 일정은 자동으로 표시되고, 만난 날을 설정하면 100일·주년이 자동으로 채워져요.</p>
+        </div>
+        <span id="cal-dplus" class="hidden text-xs font-extrabold px-3 py-1.5 rounded-full bg-gradient-to-r from-[#F4A582] to-[#D9577B] text-white"></span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 월 달력 -->
+        <div class="lg:col-span-2 bg-white p-4 sm:p-5 rounded-2xl border border-[#E8E1D7] shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="calPrevMonth()" title="이전 달" class="px-2.5 py-1.5 rounded-lg text-gray-500 hover:bg-[#F2EAE1] hover:text-[#E07A5F] transition-colors">◀</button>
+              <h3 id="cal-month-title" class="font-bold text-lg text-[#3D405B] min-w-[8.5rem] text-center"></h3>
+              <button type="button" onclick="calNextMonth()" title="다음 달" class="px-2.5 py-1.5 rounded-lg text-gray-500 hover:bg-[#F2EAE1] hover:text-[#E07A5F] transition-colors">▶</button>
+            </div>
+            <button type="button" onclick="calGoToday()" class="text-xs font-bold px-3 py-1.5 rounded-lg border border-[#E8E1D7] text-[#3D405B] hover:border-[#E07A5F] hover:text-[#E07A5F] transition-colors">오늘</button>
+          </div>
+          <div class="grid grid-cols-7 text-center text-xs font-bold mb-1">
+            <span class="text-red-400">일</span><span class="text-gray-400">월</span><span class="text-gray-400">화</span><span class="text-gray-400">수</span><span class="text-gray-400">목</span><span class="text-gray-400">금</span><span class="text-blue-400">토</span>
+          </div>
+          <div id="cal-grid" class="grid grid-cols-7 gap-px bg-[#E8E1D7] border border-[#E8E1D7] rounded-xl overflow-hidden"></div>
+          <div id="cal-legend" class="flex flex-wrap gap-x-3 gap-y-1 mt-3"></div>
+        </div>
+
+        <div class="space-y-6">
+          <!-- 선택한 날 -->
+          <div class="bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-sm space-y-3">
+            <h3 id="cal-day-title" class="font-bold text-[#3D405B]"></h3>
+            <div id="cal-day-list" class="space-y-2"></div>
+          </div>
+
+          <!-- 일정 추가/수정 -->
+          <div class="bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-sm space-y-3">
+            <h3 id="cal-form-heading" class="font-bold text-[#3D405B]">➕ 일정 추가</h3>
+            <input id="cal-title" type="text" maxlength="60" placeholder="제목 (예: 영화 데이트, 수향 생일)" class="w-full text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+            <div class="grid grid-cols-2 gap-2">
+              <label class="text-xs text-gray-500 font-bold">날짜
+                <input id="cal-date" type="date" class="w-full mt-1 text-sm font-normal border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+              </label>
+              <label class="text-xs text-gray-500 font-bold">종료일 (선택)
+                <input id="cal-end" type="date" class="w-full mt-1 text-sm font-normal border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+              </label>
+              <label class="text-xs text-gray-500 font-bold">시간 (선택)
+                <input id="cal-time" type="time" class="w-full mt-1 text-sm font-normal border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+              </label>
+              <label class="text-xs text-gray-500 font-bold">반복
+                <select id="cal-repeat" class="w-full mt-1 text-sm font-normal border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+                  <option value="none">반복 없음</option>
+                  <option value="yearly">매년 (생일·기념일)</option>
+                  <option value="monthly">매월</option>
+                </select>
+              </label>
+              <label class="text-xs text-gray-500 font-bold">분류
+                <select id="cal-cat" class="w-full mt-1 text-sm font-normal border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"></select>
+              </label>
+              <label class="text-xs text-gray-500 font-bold">누구
+                <select id="cal-who" class="w-full mt-1 text-sm font-normal border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"></select>
+              </label>
+            </div>
+            <textarea id="cal-note" rows="2" maxlength="300" placeholder="메모 (선택)" class="w-full text-sm border border-[#E8E1D7] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40"></textarea>
+            <p id="cal-edit-hint" class="hidden text-[11px] text-amber-600">🔁 반복 일정을 수정하면 모든 반복에 함께 적용돼요.</p>
+            <div class="flex items-center gap-2">
+              <button type="button" id="cal-save-btn" onclick="calSaveEvent()" class="bg-[#E07A5F] hover:bg-[#c9694f] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">+ 일정 추가</button>
+              <button type="button" id="cal-cancel-btn" onclick="calCancelEdit()" class="hidden text-sm font-bold px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            </div>
+          </div>
+
+          <!-- 다가오는 일정 -->
+          <div class="bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-sm space-y-2">
+            <h3 class="font-bold text-[#3D405B]">⏳ 다가오는 일정</h3>
+            <div id="cal-upcoming"></div>
+          </div>
+
+          <!-- 설정 -->
+          <details class="bg-white p-5 rounded-2xl border border-[#E8E1D7] shadow-sm">
+            <summary class="cursor-pointer font-bold text-sm text-[#3D405B]">⚙️ 캘린더 설정 (만난 날 · 이름)</summary>
+            <div class="space-y-2 mt-3">
+              <label class="text-xs text-gray-500 font-bold block">우리가 만난 날 (사귄 첫날)
+                <input id="cal-set-start" type="date" class="w-full mt-1 text-sm font-normal border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="text-xs text-gray-500 font-bold">이름 1
+                  <input id="cal-set-m1" type="text" maxlength="12" class="w-full mt-1 text-sm font-normal border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+                </label>
+                <label class="text-xs text-gray-500 font-bold">이름 2
+                  <input id="cal-set-m2" type="text" maxlength="12" class="w-full mt-1 text-sm font-normal border border-[#E8E1D7] rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#E07A5F]/40">
+                </label>
+              </div>
+              <p class="text-[11px] text-gray-400">만난 날을 넣으면 사귄 날을 1일로 세어 D+일수와 100일 단위·주년이 달력에 자동으로 표시돼요.</p>
+              <button type="button" onclick="calSaveSettings()" class="bg-[#3D405B] hover:bg-[#2f3248] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">설정 저장</button>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- FOOTER -->
@@ -978,7 +1083,7 @@
       hasAutoSelectedToday = false;
       editingTimelineItem = null;
       editingGourmetSpotId = null;
-      Object.keys(syncCacheFlags).forEach(function (k) { syncCacheFlags[k] = false; });
+      ['checklist', 'itinerary', 'gourmet', 'budget', 'emergency', 'notes'].forEach(function (k) { syncCacheFlags[k] = false; });
 
       setHtml('itinerary-timeline-container', '<p class="text-sm text-gray-400 text-center py-10">일정을 불러오는 중...</p>');
       ['day-tabs-container', 'course-preview-grid', 'gourmet-grid', 'budget-items-container',
@@ -1080,6 +1185,7 @@
           handleIndexChanged();
         }
         renderTripManagerList();
+        renderCalendar();   // 커플 캘린더에 표시되는 여행 일정 갱신
       }, function (err) {
         console.warn('여행 목록 동기화 오류:', err);
         // 목록을 못 읽어도 기존 도쿄 여행은 그대로 열 수 있게 합니다
@@ -1889,6 +1995,8 @@
         activeBtn.classList.add('text-[#E07A5F]', 'bg-[#F2EAE1]');
         activeBtn.classList.remove('text-[#6C757D]');
       }
+
+      if (tabId === 'calendar') renderCalendar();
 
       // Resize chart if switching to budget
       if (tabId === 'budget' && budgetChartInstance) {
@@ -3459,8 +3567,430 @@
       bindChecklistEvents();
       ensureBudgetChart();
       startTripsIndex();
+      startCalendar();
     }
     document.addEventListener('DOMContentLoaded', initApp);
+
+    /* ======================================================== */
+    /* COUPLE CALENDAR (커플 캘린더)                               */
+    /* 여행과 별개로 두 사람이 함께 쓰는 달력 — tokyoTrip/couple_calendar  */
+    /* (기존 Firestore 규칙 tokyoTrip/{document=**} 범위 안이라 규칙 변경 불필요) */
+    /* ======================================================== */
+
+    const calDocRef = db.collection(TRIP_COLLECTION).doc('couple_calendar');
+    const CAL_TOGETHER = '함께';
+    const CAL_DEFAULT_MEMBERS = ['선규', '수향'];
+    const CAL_CATEGORIES = {
+      date:        { label: '💕 데이트',      chip: 'bg-[#E07A5F]/15 text-[#B8492F]', dot: '#E07A5F' },
+      anniversary: { label: '🎂 기념일·생일', chip: 'bg-[#F2CC8F]/45 text-[#8F5B00]', dot: '#E0A93B' },
+      trip:        { label: '✈️ 여행',        chip: 'bg-[#81B29A]/25 text-[#3A7560]', dot: '#81B29A' },
+      meal:        { label: '🍽️ 약속·식사',   chip: 'bg-[#9C89B8]/25 text-[#65528D]', dot: '#9C89B8' },
+      etc:         { label: '📌 기타',        chip: 'bg-gray-100 text-gray-600',      dot: '#9CA3AF' },
+      auto:        { label: '🎉 기념일',      chip: 'bg-pink-100 text-pink-600',      dot: '#EC6A9C' }
+    };
+
+    let calState = { members: CAL_DEFAULT_MEMBERS.slice(), startDate: '', events: {} };
+    let calViewYear = new Date().getFullYear();
+    let calViewMonth = new Date().getMonth();
+    let calSelectedYmd = toYmd(todayMidnight());
+    let calEditingId = null;
+
+    function startCalendar() {
+      calInitForm();
+      calDocRef.onSnapshot(function (snap) {
+        reportSyncStatus('calendar', snap.metadata && snap.metadata.fromCache);
+        if (!snap.exists) {
+          if (snap.metadata && snap.metadata.fromCache) return; // 서버 확인 전에는 만들지 않음
+          calDocRef.set({ members: CAL_DEFAULT_MEMBERS, startDate: '', events: {} }).catch(function (e) {
+            console.warn('커플 캘린더 생성 실패:', e);
+          });
+          return;
+        }
+        const d = snap.data() || {};
+        calState = {
+          members: (Array.isArray(d.members) && d.members.length) ? d.members.map(String) : CAL_DEFAULT_MEMBERS.slice(),
+          startDate: d.startDate || '',
+          events: d.events || {}
+        };
+        renderCalendar();
+      }, function (err) {
+        console.warn('커플 캘린더 동기화 오류:', err);
+        setHtml('cal-grid', '<div class="col-span-7 bg-white p-6 text-sm text-red-500">⚠️ 캘린더를 불러오지 못했습니다. Firestore 규칙(Rules)을 확인해주세요.</div>');
+      });
+    }
+
+    function calInitForm() {
+      const cat = el('cal-cat');
+      if (cat && !cat.options.length) {
+        cat.innerHTML = Object.keys(CAL_CATEGORIES).filter(function (k) { return k !== 'auto'; })
+          .map(function (k) { return `<option value="${k}">${CAL_CATEGORIES[k].label}</option>`; }).join('');
+      }
+      const date = el('cal-date');
+      if (date && !date.value) date.value = calSelectedYmd;
+    }
+
+    /* ---------- 날짜 계산 (연/월 반복은 말일 보정) ---------- */
+    function calDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+    function calShift(base, years, months) {
+      const total = base.getFullYear() * 12 + base.getMonth() + years * 12 + months;
+      const y = Math.floor(total / 12), m = total % 12;
+      return new Date(y, m, Math.min(base.getDate(), calDaysInMonth(y, m)));
+    }
+    function calPush(map, ymd, occ) { (map[ymd] = map[ymd] || []).push(occ); }
+
+    // 직접 등록한 일정 1건을 [rs, re] 범위의 날짜별 항목으로 펼침 (여러 날/반복 포함)
+    function calExpandEvent(id, ev, rs, re, out) {
+      if (!ev || !ev.date) return;
+      const base = parseYmd(ev.date);
+      if (isNaN(base.getTime())) return;
+      const span = (ev.endDate && ev.endDate > ev.date) ? diffInDays(base, parseYmd(ev.endDate)) : 0;
+      const repeat = ev.repeat || 'none';
+
+      const emit = function (start) {
+        const end = addDaysTo(start, span);
+        if (end < rs || start > re) return;
+        const sY = toYmd(start), eY = toYmd(end);
+        for (let d = start < rs ? rs : start; d <= end && d <= re; d = addDaysTo(d, 1)) {
+          calPush(out, toYmd(d), {
+            kind: 'event', id: id, seriesKey: id + '@' + sY, startYmd: sY, endYmd: eY,
+            title: ev.title || '', category: ev.category || 'etc', who: ev.who || '', time: ev.time || '',
+            note: ev.note || '', repeat: repeat
+          });
+        }
+      };
+
+      if (repeat === 'none') { emit(base); return; }
+      for (let n = 0; n < 1200; n++) {
+        const start = repeat === 'yearly' ? calShift(base, n, 0) : calShift(base, 0, n);
+        if (start > re) break;
+        emit(start);
+      }
+    }
+
+    function calOccSort(a, b) {
+      const rank = { event: 0, auto: 1, trip: 2 };
+      if (rank[a.kind] !== rank[b.kind]) return rank[a.kind] - rank[b.kind];
+      if ((a.time || '') !== (b.time || '')) return (a.time || '') < (b.time || '') ? -1 : 1;
+      return String(a.title).localeCompare(String(b.title), 'ko');
+    }
+
+    // [rs, re] 범위의 모든 항목 (직접 일정 + 여행 + 자동 기념일)을 날짜별로 모음
+    function calCollectOccurrences(rs, re) {
+      const out = {};
+      Object.keys(calState.events).forEach(function (id) { calExpandEvent(id, calState.events[id], rs, re, out); });
+
+      // 여행은 여행 목록에서 자동으로 표시
+      Object.keys(tripsIndex).forEach(function (tid) {
+        const t = tripsIndex[tid];
+        if (!t || !t.startDate || !t.endDate) return;
+        const start = parseYmd(t.startDate), end = parseYmd(t.endDate);
+        if (end < rs || start > re) return;
+        for (let d = start < rs ? rs : start; d <= end && d <= re; d = addDaysTo(d, 1)) {
+          calPush(out, toYmd(d), {
+            kind: 'trip', id: tid, tripId: tid, seriesKey: 'trip@' + tid, startYmd: t.startDate, endYmd: t.endDate,
+            title: (t.emoji || '✈️') + ' ' + (t.name || ''), category: 'trip', who: '', time: '', note: '', repeat: 'none'
+          });
+        }
+      });
+
+      // 만난 날이 설정되어 있으면 100일 단위 · 주년 기념일을 자동 표시 (사귄 날 = 1일)
+      if (calState.startDate) {
+        const base = parseYmd(calState.startDate);
+        if (!isNaN(base.getTime())) {
+          for (let k = 1; k <= 300; k++) {
+            const d = addDaysTo(base, 100 * k - 1);
+            if (d > re) break;
+            if (d >= rs) calPush(out, toYmd(d), { kind: 'auto', id: 'm' + k, seriesKey: 'auto-m' + k, startYmd: toYmd(d), endYmd: toYmd(d), title: '💞 ' + (100 * k) + '일', category: 'auto', who: CAL_TOGETHER, time: '', note: '', repeat: 'none' });
+          }
+          for (let n = 1; n <= 80; n++) {
+            const d = calShift(base, n, 0);
+            if (d > re) break;
+            if (d >= rs) calPush(out, toYmd(d), { kind: 'auto', id: 'y' + n, seriesKey: 'auto-y' + n, startYmd: toYmd(d), endYmd: toYmd(d), title: '🎉 ' + n + '주년', category: 'auto', who: CAL_TOGETHER, time: '', note: '', repeat: 'none' });
+          }
+        }
+      }
+
+      Object.keys(out).forEach(function (k) { out[k].sort(calOccSort); });
+      return out;
+    }
+
+    function calStyle(o) {
+      if (o.kind === 'auto') return CAL_CATEGORIES.auto;
+      if (o.kind === 'trip') return CAL_CATEGORIES.trip;
+      return CAL_CATEGORIES[o.category] || CAL_CATEGORIES.etc;
+    }
+
+    /* ---------- 화면 그리기 ---------- */
+    function renderCalendar() {
+      if (!el('cal-grid')) return;
+      const y = calViewYear, m = calViewMonth;
+      setText('cal-month-title', y + '년 ' + (m + 1) + '월');
+
+      const first = new Date(y, m, 1);
+      const gridStart = addDaysTo(first, -first.getDay());
+      const occ = calCollectOccurrences(gridStart, addDaysTo(gridStart, 41));
+      const todayY = toYmd(todayMidnight());
+
+      let html = '';
+      for (let i = 0; i < 42; i++) {
+        const d = addDaysTo(gridStart, i);
+        const ymd = toYmd(d);
+        const list = occ[ymd] || [];
+        const dow = d.getDay();
+        const numCls = ymd === todayY ? 'bg-[#E07A5F] text-white' : (dow === 0 ? 'text-red-400' : (dow === 6 ? 'text-blue-400' : 'text-gray-600'));
+        const chips = list.slice(0, 2).map(function (o) {
+          return `<div class="hidden sm:block truncate text-[10px] leading-4 px-1 rounded ${calStyle(o).chip}">${escapeHtml(o.title)}</div>`;
+        }).join('');
+        const more = list.length > 2 ? `<div class="hidden sm:block text-[10px] text-gray-400 px-1">+${list.length - 2}개</div>` : '';
+        const dots = list.slice(0, 4).map(function (o) {
+          return `<span class="w-1.5 h-1.5 rounded-full inline-block" style="background:${calStyle(o).dot}"></span>`;
+        }).join('');
+
+        html += `
+          <button type="button" data-ymd="${ymd}" onclick="calSelectDate('${ymd}')" class="cal-cell text-left bg-white ${d.getMonth() === m ? '' : 'opacity-40'} ${ymd === calSelectedYmd ? 'ring-2 ring-inset ring-[#E07A5F]' : ''} min-h-[58px] sm:min-h-[92px] p-1 sm:p-1.5 flex flex-col gap-0.5 hover:bg-[#FAF7F2] transition-colors">
+            <span class="text-[11px] sm:text-xs font-bold w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full ${numCls}">${d.getDate()}</span>
+            ${chips}${more}
+            <div class="sm:hidden flex gap-0.5 flex-wrap mt-0.5">${dots}</div>
+          </button>`;
+      }
+      setHtml('cal-grid', html);
+
+      renderCalDayPanel();
+      renderCalUpcoming();
+      renderCalHeader();
+      renderCalLegend();
+    }
+
+    function renderCalHeader() {
+      const badge = el('cal-dplus');
+      if (badge) {
+        const base = calState.startDate ? parseYmd(calState.startDate) : null;
+        const n = base && !isNaN(base.getTime()) ? diffInDays(base, todayMidnight()) + 1 : 0;
+        if (n >= 1) { badge.textContent = '💞 함께한 지 D+' + n.toLocaleString() + '일'; badge.classList.remove('hidden'); }
+        else badge.classList.add('hidden');
+      }
+      // 설정 입력칸은 입력 중이 아닐 때만 저장된 값으로 채움
+      const fill = function (id, v) { const e = el(id); if (e && document.activeElement !== e) e.value = v; };
+      fill('cal-set-start', calState.startDate || '');
+      fill('cal-set-m1', calState.members[0] || '');
+      fill('cal-set-m2', calState.members[1] || '');
+
+      const who = el('cal-who');
+      if (who) {
+        const prev = who.value;
+        const opts = [CAL_TOGETHER].concat(calState.members);
+        who.innerHTML = opts.map(function (n) { return `<option value="${escapeAttr(n)}">${escapeHtml(n)}</option>`; }).join('');
+        who.value = opts.indexOf(prev) !== -1 ? prev : CAL_TOGETHER;
+      }
+    }
+
+    function renderCalLegend() {
+      setHtml('cal-legend', ['date', 'anniversary', 'meal', 'trip', 'auto'].map(function (k) {
+        return `<span class="inline-flex items-center gap-1 text-[11px] text-gray-500"><span class="w-2 h-2 rounded-full inline-block" style="background:${CAL_CATEGORIES[k].dot}"></span>${CAL_CATEGORIES[k].label.replace(/^\S+\s/, '')}</span>`;
+      }).join(''));
+    }
+
+    function renderCalDayPanel() {
+      const sel = parseYmd(calSelectedYmd);
+      const list = calCollectOccurrences(sel, sel)[calSelectedYmd] || [];
+      let title = (sel.getMonth() + 1) + '월 ' + sel.getDate() + '일 (' + WEEKDAYS[sel.getDay()] + ')';
+      if (calState.startDate) {
+        const n = diffInDays(parseYmd(calState.startDate), sel) + 1;
+        if (n >= 1) title += ' · D+' + n.toLocaleString();
+      }
+      setText('cal-day-title', title);
+
+      if (list.length === 0) {
+        setHtml('cal-day-list', '<p class="text-sm text-gray-400 py-2">이 날은 일정이 없어요. 아래에서 추가해 보세요 💕</p>');
+        return;
+      }
+      setHtml('cal-day-list', list.map(function (o) {
+        const st = calStyle(o);
+        const label = o.kind === 'auto' ? '🎉 기념일' : (o.kind === 'trip' ? '✈️ 여행' : st.label);
+        const meta = [];
+        if (o.time) meta.push('⏰ ' + o.time);
+        if (o.who) meta.push(o.who);
+        if (o.repeat === 'yearly') meta.push('🔁 매년');
+        if (o.repeat === 'monthly') meta.push('🔁 매월');
+        if (o.endYmd && o.endYmd !== o.startYmd) meta.push(o.startYmd.slice(5).replace('-', '/') + ' ~ ' + o.endYmd.slice(5).replace('-', '/'));
+        const actions = o.kind === 'event'
+          ? `<button type="button" onclick="calStartEdit('${o.id}')" title="수정" class="text-gray-300 hover:text-[#E07A5F] text-xs px-1">✎</button>
+             <button type="button" onclick="calDelete('${o.id}')" title="삭제" class="text-gray-300 hover:text-[#E07A5F] text-xs px-1">✕</button>`
+          : (o.kind === 'trip' ? `<button type="button" onclick="calOpenTrip('${o.tripId}')" class="text-[11px] font-bold text-[#E07A5F] hover:underline px-1">열기 ➔</button>` : '');
+        return `
+          <div class="border border-[#E8E1D7] rounded-xl p-3 bg-[#FAF7F2]">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${st.chip}">${escapeHtml(label)}</span>
+                <div class="font-bold text-sm text-[#3D405B] mt-1 break-words">${escapeHtml(o.title)}</div>
+                ${meta.length ? `<div class="text-xs text-gray-500 mt-0.5">${meta.map(escapeHtml).join(' · ')}</div>` : ''}
+                ${o.note ? `<p class="text-xs text-gray-600 mt-1 whitespace-pre-wrap break-words">${escapeHtml(o.note)}</p>` : ''}
+              </div>
+              <div class="flex items-center shrink-0">${actions}</div>
+            </div>
+          </div>`;
+      }).join(''));
+    }
+
+    // 오늘 이후(진행 중 포함) 다가오는 일정
+    function calUpcomingItems(limit) {
+      const today = todayMidnight();
+      const todayY = toYmd(today);
+      const occ = calCollectOccurrences(today, addDaysTo(today, 400));
+      const seen = {};
+      const items = [];
+      Object.keys(occ).sort().forEach(function (ymd) {
+        occ[ymd].forEach(function (o) {
+          if (seen[o.seriesKey]) return;
+          seen[o.seriesKey] = true;
+          items.push(Object.assign({}, o, { date: o.startYmd < todayY ? todayY : o.startYmd, ongoing: o.startYmd < todayY }));
+        });
+      });
+      items.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : calOccSort(a, b); });
+      return items.slice(0, limit);
+    }
+
+    function renderCalUpcoming() {
+      const today = todayMidnight();
+      const items = calUpcomingItems(8);
+      if (!items.length) { setHtml('cal-upcoming', '<p class="text-sm text-gray-400">다가오는 일정이 없어요.</p>'); return; }
+      setHtml('cal-upcoming', items.map(function (o) {
+        const diff = diffInDays(today, parseYmd(o.date));
+        const badge = o.ongoing ? '진행 중' : (diff === 0 ? '오늘' : 'D-' + diff);
+        const badgeCls = (o.ongoing || diff === 0) ? 'bg-[#E07A5F] text-white' : 'bg-gray-100 text-gray-600';
+        const st = calStyle(o);
+        const d = parseYmd(o.date);
+        return `
+          <button type="button" onclick="calSelectDate('${o.date}')" class="w-full text-left flex items-center gap-2 py-1.5 hover:bg-[#FAF7F2] rounded-lg px-1 transition-colors">
+            <span class="shrink-0 text-[10px] font-extrabold px-2 py-0.5 rounded-full ${badgeCls}">${badge}</span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-sm font-semibold text-[#3D405B] truncate">${escapeHtml(o.title)}</span>
+              <span class="block text-[11px] text-gray-400">${(d.getMonth() + 1)}/${d.getDate()} (${WEEKDAYS[d.getDay()]})${o.time ? ' · ' + escapeHtml(o.time) : ''}</span>
+            </span>
+            <span class="w-2 h-2 rounded-full shrink-0" style="background:${st.dot}"></span>
+          </button>`;
+      }).join(''));
+    }
+
+    /* ---------- 이동 · 선택 ---------- */
+    function calPrevMonth() { calViewMonth--; if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; } renderCalendar(); }
+    function calNextMonth() { calViewMonth++; if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; } renderCalendar(); }
+    function calGoToday() {
+      const t = todayMidnight();
+      calViewYear = t.getFullYear(); calViewMonth = t.getMonth();
+      calSelectDate(toYmd(t));
+    }
+    function calSelectDate(ymd) {
+      calSelectedYmd = ymd;
+      const d = parseYmd(ymd);
+      calViewYear = d.getFullYear(); calViewMonth = d.getMonth();
+      if (!calEditingId && el('cal-date')) el('cal-date').value = ymd;
+      renderCalendar();
+    }
+    function calOpenTrip(id) {
+      if (!tripsIndex[id]) return;
+      switchTrip(id);
+      switchTab('overview');
+    }
+
+    /* ---------- 일정 추가 · 수정 · 삭제 ---------- */
+    function calUpdateFormUI() {
+      setText('cal-form-heading', calEditingId ? '✏️ 일정 수정 중...' : '➕ 일정 추가');
+      setText('cal-save-btn', calEditingId ? '💾 수정 내용 저장' : '+ 일정 추가');
+      const cancel = el('cal-cancel-btn');
+      if (cancel) cancel.classList.toggle('hidden', !calEditingId);
+      const hint = el('cal-edit-hint');
+      if (hint) hint.classList.toggle('hidden', !(calEditingId && calState.events[calEditingId] && calState.events[calEditingId].repeat !== 'none'));
+    }
+
+    function calResetForm() {
+      calEditingId = null;
+      el('cal-title').value = '';
+      el('cal-date').value = calSelectedYmd;
+      el('cal-end').value = '';
+      el('cal-time').value = '';
+      el('cal-cat').value = 'date';
+      el('cal-who').value = CAL_TOGETHER;
+      el('cal-repeat').value = 'none';
+      el('cal-note').value = '';
+      calUpdateFormUI();
+    }
+    function calCancelEdit() { calResetForm(); }
+
+    function calStartEdit(id) {
+      const ev = calState.events[id];
+      if (!ev) return;
+      calEditingId = id;
+      el('cal-title').value = ev.title || '';
+      el('cal-date').value = ev.date || '';
+      el('cal-end').value = ev.endDate || '';
+      el('cal-time').value = ev.time || '';
+      el('cal-cat').value = ev.category || 'etc';
+      el('cal-who').value = ev.who || CAL_TOGETHER;
+      el('cal-repeat').value = ev.repeat || 'none';
+      el('cal-note').value = ev.note || '';
+      calUpdateFormUI();
+      el('cal-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function calSaveEvent() {
+      const title = el('cal-title').value.trim();
+      const date = el('cal-date').value;
+      const endDate = el('cal-end').value;
+      if (!title) { alert('제목을 입력해주세요.'); return; }
+      if (!date) { alert('날짜를 선택해주세요.'); return; }
+      if (endDate && endDate < date) { alert('종료일은 시작 날짜보다 빠를 수 없어요.'); return; }
+
+      const ev = {
+        title: title.slice(0, 60),
+        date: date,
+        endDate: endDate || '',
+        time: el('cal-time').value || '',
+        category: el('cal-cat').value || 'etc',
+        who: el('cal-who').value || CAL_TOGETHER,
+        repeat: el('cal-repeat').value || 'none',
+        note: el('cal-note').value.trim().slice(0, 300)
+      };
+      const id = calEditingId || ('ev_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+      if (!calEditingId) ev.createdAt = Date.now();
+
+      calDocRef.set({ events: { [id]: ev } }, { merge: true }).then(function () {
+        calSelectedYmd = date;
+        const d = parseYmd(date);
+        calViewYear = d.getFullYear(); calViewMonth = d.getMonth();
+        calResetForm();
+        renderCalendar();
+      }).catch(function (e) {
+        console.warn('일정 저장 실패:', e);
+        alert('일정을 저장하지 못했어요. 인터넷 연결과 Firestore 설정을 확인해주세요.');
+      });
+    }
+
+    function calDelete(id) {
+      const ev = calState.events[id];
+      if (!ev) return;
+      const rep = ev.repeat && ev.repeat !== 'none' ? '\n(반복 일정이라 모든 반복이 함께 삭제돼요)' : '';
+      if (!confirm("'" + ev.title + "' 일정을 삭제할까요?" + rep)) return;
+      calDocRef.update({ ['events.' + id]: firebase.firestore.FieldValue.delete() }).then(function () {
+        if (calEditingId === id) calResetForm();
+      }).catch(function (e) {
+        console.warn('일정 삭제 실패:', e);
+        alert('일정 삭제에 실패했어요.');
+      });
+    }
+
+    function calSaveSettings() {
+      const names = [el('cal-set-m1').value.trim().slice(0, 12), el('cal-set-m2').value.trim().slice(0, 12)]
+        .filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+      if (names.length < 1) { alert('이름을 1개 이상 입력해주세요.'); return; }
+      const start = el('cal-set-start').value || '';
+      calDocRef.set({ members: names, startDate: start }, { merge: true }).then(function () {
+        alert('저장했어요 💕');
+      }).catch(function (e) {
+        console.warn('캘린더 설정 저장 실패:', e);
+        alert('저장에 실패했어요.');
+      });
+    }
 
   </script>
 
