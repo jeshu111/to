@@ -2,25 +2,16 @@
 <html lang="ko">
 <head>
   <!-- Chosen Palette: Warm Sakura Neutral (Warm Background #FAF7F2, Slate Navy #3D405B, Terracotta Coral #E07A5F, Soft Sage #81B29A, Warm Gold #F2CC8F) -->
-  <!-- Application Structure Plan: 
-       A comprehensive single-page dashboard designed for a seamless romantic Tokyo couple trip experience.
-       1. Header & Quick Overview: Highlight flight times (Air Premia YP731/YP732), hotel check-in/out, TCAT transit perks, and countdown widget.
-       2. Daily Itinerary Hub: Tabbed day-by-day interactive timeline with activity tags (식사, 관광, 디저트, 이동, 쇼핑) and collapsible details.
-       3. Gourmet & Dessert Explorer: Searchable and filterable grid of all 15+ curated restaurants/cafes by location (시부야, 아사쿠사, 긴자, 우에노 등), type, and reservation status.
-       4. Budget & Analytics: Chart.js visualization of travel expenses by category and interactive budget calculator.
-       5. Checklist & Travel Essentials: Interactive persistent checklist for documents, apps, reservations, and TCAT transit guides.
+  <!--
+    여행 대시보드 (단일 HTML + Firebase Firestore)
+    - 탭: 여행 요약 · 일자별 일정 · 미식 지도 · 예산 & 분석(정산) · 준비물 & 팁 · 커플 캘린더
+    - 여러 여행 관리: 헤더의 [여행 관리] (새 여행 · 보관 · 백업/복원)
+    - 데이터: Firestore tokyoTrip 컬렉션 (도쿄 여행은 기존 경로, 새 여행은 trip_{id}/data/*, 목록은 trips_index)
   -->
-  <!-- Visualization & Content Choices:
-       - Summary Metrics: Informative stats cards with Unicode icons for quick reference.
-       - Daily Timeline: Interactive timeline using HTML/Tailwind flex layout with active tab filtering.
-       - Gourmet Explorer: Dynamic JS grid cards with live text search, area chips, and reservation badges.
-       - Budget Chart: Chart.js Canvas Doughnut chart for expense allocation and Bar chart for activity density (NO SVG / NO Mermaid used).
-  -->
-  <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-  
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>✈️ 도쿄 4박 5일 커플 로맨틱 & 미식 여행 대시보드</title>
+  <title>여행 대시보드</title>
 
   <!-- PWA: 홈 화면 추가 아이콘 / 매니페스트 -->
   <link rel="manifest" href="manifest.json">
@@ -36,7 +27,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Firebase (Firestore) CDN — 체크리스트 실시간 공유 동기화용 -->
+  <!-- Firebase (Firestore) CDN — 모든 데이터의 실시간 저장/공유 -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -111,11 +102,11 @@
 
         <div class="flex items-center gap-2 shrink-0">
           <!-- 여행 관리 (목록 · 새 여행 · 보관 · 백업) -->
-          <button type="button" id="trip-manager-btn" onclick="openTripManager()" class="shrink-0 h-10 min-w-[2.5rem] px-2.5 sm:px-3 rounded-lg text-sm font-semibold text-[#3D405B] bg-white border border-[#E8E1D7] hover:border-[#E07A5F] hover:text-[#E07A5F] transition-all flex items-center justify-center">🗂️<span class="hidden sm:inline"> 여행 관리</span></button>
+          <button type="button" onclick="openTripManager()" class="shrink-0 h-10 min-w-[2.5rem] px-2.5 sm:px-3 rounded-lg text-sm font-semibold text-[#3D405B] bg-white border border-[#E8E1D7] hover:border-[#E07A5F] hover:text-[#E07A5F] transition-all flex items-center justify-center">🗂️<span class="hidden sm:inline"> 여행 관리</span></button>
 
           <!-- Mobile Menu Toggle Button -->
           <div class="lg:hidden">
-            <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="h-10 w-10 flex items-center justify-center text-[#3D405B] hover:bg-[#F2EAE1] rounded-lg">
+            <button onclick="toggleMobileMenu()" class="h-10 w-10 flex items-center justify-center text-[#3D405B] hover:bg-[#F2EAE1] rounded-lg">
             <span class="text-xl">☰</span>
           </button>
           </div>
@@ -802,7 +793,7 @@
         <div id="tm-edit" class="space-y-2 mt-3"></div>
       </details>
 
-      <div id="tm-backup" class="space-y-2 border-t border-gray-100 pt-4">
+      <div class="space-y-2 border-t border-gray-100 pt-4">
         <h3 class="font-bold text-sm text-[#3D405B]">💾 백업 & 복원</h3>
         <p class="text-xs text-gray-500">백업 파일(JSON)에는 일정·맛집·예산·정산·체크리스트·비상연락처가 모두 들어 있어요. 복원은 항상 <b>새 여행으로 추가</b>되며 기존 데이터를 덮어쓰지 않아요.</p>
         <div class="flex flex-wrap gap-2">
@@ -1054,7 +1045,7 @@
     }
 
     function flushPendingNotes() {
-      if (typeof notesTimer !== 'undefined' && notesTimer) {
+      if (notesTimer) {
         clearTimeout(notesTimer);
         notesTimer = null;
         const ta = el('trip-notes');
@@ -2898,7 +2889,7 @@
       });
     }
 
-    // 원화/엔화 각각 "미정산 + 지불자 지정" 항목만 모아 2인 50:50 정산액 계산
+    // 통화별(원화/외화)로 "미정산 + 지불자 지정" 항목만 모아, 여행자 수대로 균등 분할한 정산액 계산
     function renderSettlement(list) {
       const box = document.getElementById('settlement-summary');
       if (!box) return;
@@ -4020,7 +4011,7 @@
   </script>
 
   <!-- 동기화 상태 표시 (오프라인/실시간 여부, 마지막 동기화 시각) -->
-  <div id="sync-status-indicator" class="fixed bottom-4 right-4 z-50 text-xs font-bold px-3 py-1.5 rounded-full shadow-md border flex items-center gap-1.5 bg-white border-[#E8E1D7] text-gray-500">
+  <div class="fixed bottom-4 right-4 z-50 text-xs font-bold px-3 py-1.5 rounded-full shadow-md border flex items-center gap-1.5 bg-white border-[#E8E1D7] text-gray-500">
     <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-gray-300"></span>
     <span id="sync-status-text">연결 확인 중...</span>
   </div>
