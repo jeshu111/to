@@ -274,6 +274,7 @@
           </div>
           <h2 id="overview-title" class="text-2xl sm:text-3xl font-extrabold text-[#3D405B]"></h2>
           <p id="overview-sub" class="text-sm sm:text-base text-[#5C6079]"></p>
+          <p id="overview-weather-hint" class="hidden text-xs text-gray-400">📍 여행 관리 → 현재 여행 정보 수정에서 여행지를 입력하면 일자별 날씨가 표시돼요.</p>
         </div>
 
         <div class="bg-white p-6 rounded-2xl border border-[#E8E1D7] shadow-sm space-y-3">
@@ -1088,6 +1089,7 @@
       emergencyCache = {};
       checklistCustomCache = {};
       budgetChartMeta = [];
+      weatherState = { key: '', status: 'idle', data: {}, at: 0 };
       currentDaySelected = 1;
       hasAutoSelectedToday = false;
       editingTimelineItem = null;
@@ -1141,7 +1143,10 @@
 
       setText('overview-title', emoji + ' ' + t.name);
       setText('overview-badge-text', nightsText(n) + ' 여행');
-      setText('overview-sub', fmtTripRange(t));
+      const wxLoc = getTripLocation();
+      setText('overview-sub', fmtTripRange(t) + (wxLoc ? ' · 📍 ' + wxLoc.name : ''));
+      const wxHint = el('overview-weather-hint');
+      if (wxHint) wxHint.classList.toggle('hidden', !!wxLoc);
       setText('course-preview-title', '🗓️ ' + nightsText(n) + ' 코스 미리보기');
       setText('footer-trip-title', emoji + ' ' + t.name + ' 여행 플래너 & 대시보드');
 
@@ -1151,6 +1156,7 @@
       refreshBudgetFormOptions();
       renderDdayBadge();
       renderTripBanner();
+      loadWeather();
     }
 
     // 일정·예산 등을 이미 받아둔 캐시로 다시 그림 (여행 정보 수정/보관 상태 변경 시)
@@ -2013,6 +2019,7 @@
       }
 
       if (tabId === 'calendar') renderCalendar();
+      if (tabId === 'itinerary' || tabId === 'overview') loadWeather();
 
       // Resize chart if switching to budget
       if (tabId === 'budget' && budgetChartInstance) {
@@ -2188,12 +2195,14 @@
         const color = accentColors[(i - 1) % accentColors.length];
         const isToday = i === todayDay;
         const titleHtml = d.title ? escapeHtml(d.title) : '<span class="text-gray-400">제목 미정</span>';
+        const wChip = weatherChipHtml(i, 'card');
 
         html += `
           <div onclick="switchTab('itinerary'); selectDay(${i});" class="relative bg-white p-4 rounded-xl border ${isToday ? 'border-[#E07A5F] ring-2 ring-[#E07A5F]/30' : 'border-[#E8E1D7]'} hover:shadow-md transition-all cursor-pointer group">
             ${isToday ? `<span class="absolute -top-2 -right-2 bg-[#E07A5F] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">오늘</span>` : ''}
             <span class="text-xs font-bold block mb-1" style="color: ${color}">${escapeHtml(d.badge || ('DAY ' + i))} (${escapeHtml(d.shortDate || '')})</span>
             <h4 class="font-bold text-sm text-[#3D405B] transition-colors">${titleHtml}</h4>
+            ${wChip ? `<div class="mt-1.5">${wChip}</div>` : ''}
             <p class="text-xs text-gray-500 mt-2 line-clamp-2">${escapeHtml(teaser)}</p>
           </div>
         `;
@@ -2221,7 +2230,7 @@
         <div class="bg-white p-5 rounded-2xl border border-[#E8E1D7] flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
             <span class="text-xs font-extrabold px-2.5 py-1 rounded-md text-white mr-2" style="background-color: ${dayData.color}">${dayData.badge}</span>
-            <span class="text-lg font-bold text-[#3D405B]">${dayData.date}</span>
+            <span class="text-lg font-bold text-[#3D405B]">${dayData.date}</span>${weatherChipHtml(dayNum, 'header')}
           </div>
           <div class="flex items-center gap-1.5">
             <h3 class="text-sm font-semibold text-[#E07A5F]">${escapeHtml(dayData.title || '제목을 정해 보세요 ✎')}</h3>
@@ -3203,6 +3212,13 @@
             <input id="${p}-end" type="date" value="${escapeAttr(v.endDate)}" ${dis} class="${INPUT_CLS} mt-1 font-normal">
           </label>
         </div>
+        <label class="text-xs text-gray-500 font-bold block">여행지 (날씨 표시용 · 선택)
+          <div class="flex gap-2 mt-1">
+            <input id="${p}-loc" type="text" maxlength="40" value="${escapeAttr(v.location ? v.location.name : '')}" placeholder="예: 강릉, 도쿄, 뉴욕" class="${INPUT_CLS} font-normal">
+            <button type="button" onclick="checkLocation('${p}')" class="shrink-0 text-xs font-bold px-3 rounded-lg border border-[#E8E1D7] text-[#3D405B] hover:border-[#E07A5F] hover:text-[#E07A5F] transition-colors">위치 확인</button>
+          </div>
+          <span id="${p}-loc-status" class="text-[11px] text-gray-400 font-normal block mt-1">${v.location ? escapeHtml(v.location.label || '') : '여행지를 입력하면 일자별 날씨를 보여줘요. (비워두면 날씨 없이 사용)'}</span>
+        </label>
         <label class="text-xs text-gray-500 font-bold block">여행자 이름 (쉼표로 구분 · 정산에 사용돼요)
           <input id="${p}-payers" type="text" value="${escapeAttr(v.payers.join(', '))}" placeholder="예: 선규, 수향" class="${INPUT_CLS} mt-1 font-normal">
         </label>
@@ -3231,6 +3247,8 @@
       const abroad = el(p + '-abroad').checked;
       const fxLabel = el(p + '-fx-label').value.trim();
       const fxRate = Number(el(p + '-fx-rate').value);
+      const locEl = el(p + '-loc');
+      const locText = locEl ? locEl.value.trim().slice(0, 40) : '';
 
       if (!name) { alert('여행 이름을 입력해주세요.'); return null; }
       if (!start || !end) { alert('출발일과 종료일을 선택해주세요.'); return null; }
@@ -3246,7 +3264,8 @@
         startDate: start,
         endDate: end,
         payers: payers,
-        fx: abroad ? { label: fxLabel, rate: fxRate } : null
+        fx: abroad ? { label: fxLabel, rate: fxRate } : null,
+        locText: locText
       };
     }
 
@@ -3254,7 +3273,7 @@
       renderTripManagerList();
 
       // 새 여행 폼
-      const base = { name: '', emoji: '✈️', startDate: '', endDate: '', payers: PAYERS.slice(), fx: null };
+      const base = { name: '', emoji: '✈️', startDate: '', endDate: '', payers: PAYERS.slice(), fx: null, location: null };
       const hasEmergency = Object.keys(emergencyCache || {}).length > 0;
       setHtml('tm-new', `
         <h3 class="font-bold text-sm text-[#3D405B]">➕ 새 여행 만들기</h3>
@@ -3271,7 +3290,7 @@
       } else {
         const lock = isLegacyTrip();
         setHtml('tm-edit', `
-          ${tripFormHtml('et', currentTrip, { lockDates: lock })}
+          ${tripFormHtml('et', Object.assign({}, currentTrip, { location: getTripLocation() }), { lockDates: lock })}
           ${lock ? '<p class="text-[11px] text-gray-400">※ 이 여행은 날짜가 고정되어 있어 날짜는 수정할 수 없어요.</p>' : ''}
           <p class="text-[11px] text-gray-400">※ 여행자 이름을 바꾸면 기존 항목의 지불자는 '미지정'으로 보여요 (이름을 되돌리면 복구됩니다).</p>
           <button type="button" onclick="saveTripEdits()" class="bg-[#3D405B] hover:bg-[#2f3248] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">변경 내용 저장</button>
@@ -3351,11 +3370,18 @@
     function createTripFromForm() {
       const v = readTripForm('nt');
       if (!v) return;
+      resolveLocationForForm('nt', null, v.locText).then(function (res) {
+        if (!res.proceed) return;
+        v.location = res.location;
+        finishCreateTrip(v);
+      });
+    }
 
+    function finishCreateTrip(v) {
       const id = newTripId();
       const meta = {
         name: v.name, emoji: v.emoji, startDate: v.startDate, endDate: v.endDate,
-        status: 'active', payers: v.payers, fx: v.fx, createdAt: Date.now()
+        status: 'active', payers: v.payers, fx: v.fx, location: v.location || null, createdAt: Date.now()
       };
       const data = buildBlankTripData(meta);
       const copyBox = el('nt-copy-emergency');
@@ -3383,23 +3409,25 @@
       const v = readTripForm('et');
       if (!v) return;
 
-      const id = currentTripId;
       const oldN = tripNumDays(currentTrip);
-      const newMeta = Object.assign({}, currentTrip, {
-        name: v.name, emoji: v.emoji, startDate: v.startDate, endDate: v.endDate, payers: v.payers, fx: v.fx
-      });
-      const newN = tripNumDays(newMeta);
-
+      const newN = tripNumDays(Object.assign({}, currentTrip, { startDate: v.startDate, endDate: v.endDate }));
       if (newN < oldN && !confirm('여행 기간이 ' + oldN + '일 → ' + newN + '일로 줄어서 DAY ' + (newN + 1) + ' 이후의 일정이 삭제돼요.\n계속할까요? (먼저 백업을 받아두는 걸 추천해요)')) return;
 
-      tripsIndexRef.set({ trips: { [id]: newMeta } }, { merge: true }).then(function () {
-        if (newN < oldN) {
-          const updates = {};
-          for (let i = newN + 1; i <= oldN; i++) updates['day' + i] = firebase.firestore.FieldValue.delete();
-          return realDocRef(id, 'itinerary').update(updates);
-        }
-      }).then(function () {
-        alert('저장했어요.');
+      const id = currentTripId;
+      resolveLocationForForm('et', getTripLocation(), v.locText).then(function (res) {
+        if (!res.proceed) return;
+        const newMeta = Object.assign({}, currentTrip, {
+          name: v.name, emoji: v.emoji, startDate: v.startDate, endDate: v.endDate, payers: v.payers, fx: v.fx, location: res.location || null
+        });
+        return tripsIndexRef.set({ trips: { [id]: newMeta } }, { merge: true }).then(function () {
+          if (newN < oldN) {
+            const updates = {};
+            for (let i = newN + 1; i <= oldN; i++) updates['day' + i] = firebase.firestore.FieldValue.delete();
+            return realDocRef(id, 'itinerary').update(updates);
+          }
+        }).then(function () {
+          alert('저장했어요.');
+        });
       }).catch(function (e) {
         console.warn('여행 정보 수정 실패:', e);
         alert('저장에 실패했어요.');
@@ -3552,7 +3580,7 @@
         const payers = Array.isArray(src.payers) && src.payers.length ? src.payers.map(String).slice(0, 8) : ['나'];
         const meta = {
           name: name.slice(0, 40), emoji: src.emoji || '✈️', startDate: src.startDate, endDate: src.endDate,
-          status: 'active', payers: payers, fx: fx, createdAt: Date.now(), restoredAt: Date.now()
+          status: 'active', payers: payers, fx: fx, location: sanitizeLocation(src.location), createdAt: Date.now(), restoredAt: Date.now()
         };
         metas[id] = meta;
         TRIP_DATA_KINDS.forEach(function (k) {
@@ -3586,6 +3614,199 @@
       startCalendar();
     }
     document.addEventListener('DOMContentLoaded', initApp);
+
+    /* ======================================================== */
+    /* WEATHER (일자별 날씨 · Open-Meteo 무료 API, 키 불필요)         */
+    /* 여행지(여행 정보의 "여행지")를 좌표로 바꿔 일자 헤더/미리보기에 표시 */
+    /* ======================================================== */
+
+    const LEGACY_LOCATION = { name: '도쿄', label: '도쿄도, 일본', lat: 35.6895, lon: 139.6917 };
+    const WEATHER_TTL = 3 * 3600 * 1000;      // 3시간 동안은 저장된 날씨 재사용
+    const WEATHER_FORECAST_AHEAD = 15;         // 예보는 약 15일 앞까지
+    const WEATHER_PAST_DAYS = 90;              // 예보 API는 최근 90일까지, 그 이전은 과거 기록 API
+    const WMO = {
+      0: ['☀️', '맑음'], 1: ['🌤️', '대체로 맑음'], 2: ['⛅', '구름 조금'], 3: ['☁️', '흐림'],
+      45: ['🌫️', '안개'], 48: ['🌫️', '안개'],
+      51: ['🌦️', '이슬비'], 53: ['🌦️', '이슬비'], 55: ['🌦️', '강한 이슬비'], 56: ['🌧️', '어는 이슬비'], 57: ['🌧️', '어는 이슬비'],
+      61: ['🌧️', '약한 비'], 63: ['🌧️', '비'], 65: ['🌧️', '강한 비'], 66: ['🌧️', '어는 비'], 67: ['🌧️', '강한 어는 비'],
+      71: ['🌨️', '약한 눈'], 73: ['🌨️', '눈'], 75: ['❄️', '강한 눈'], 77: ['❄️', '싸락눈'],
+      80: ['🌦️', '약한 소나기'], 81: ['🌦️', '소나기'], 82: ['⛈️', '강한 소나기'], 85: ['🌨️', '눈 소나기'], 86: ['🌨️', '강한 눈 소나기'],
+      95: ['⛈️', '뇌우'], 96: ['⛈️', '우박 동반 뇌우'], 99: ['⛈️', '우박 동반 뇌우']
+    };
+    function wmoInfo(code) { return WMO[code] || ['🌡️', '날씨']; }
+
+    let weatherState = { key: '', status: 'idle', data: {}, at: 0 };   // status: idle | none | loading | ok | error
+    const locDraft = {};                                              // 폼별 "위치 확인" 결과 임시 저장
+
+    function validLocation(l) {
+      return !!(l && typeof l.name === 'string' && isFinite(Number(l.lat)) && isFinite(Number(l.lon)));
+    }
+    function sanitizeLocation(l) {
+      return validLocation(l)
+        ? { name: l.name.slice(0, 40), label: String(l.label || l.name).slice(0, 80), lat: Number(l.lat), lon: Number(l.lon) }
+        : null;
+    }
+    // 현재 여행의 날씨 위치 (도쿄 여행은 기본 위치 내장, 그 외에는 설정한 여행지)
+    function getTripLocation() {
+      if (!currentTrip) return null;
+      if (validLocation(currentTrip.location)) return currentTrip.location;
+      return isLegacyTrip() ? LEGACY_LOCATION : null;
+    }
+
+    /* ---------- 위치 검색 (지오코딩) ---------- */
+    function geocodePlace(name) {
+      const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(name) + '&count=1&language=ko&format=json';
+      return fetch(url).then(function (r) {
+        if (!r.ok) throw new Error('geocode ' + r.status);
+        return r.json();
+      }).then(function (j) {
+        const r = j && j.results && j.results[0];
+        if (!r) return null;
+        const label = [r.name, r.admin1, r.country].filter(Boolean).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(', ');
+        return { name: name, label: label, lat: Number(r.latitude), lon: Number(r.longitude) };
+      });
+    }
+
+    // 폼의 "위치 확인" 버튼
+    function checkLocation(p) {
+      const text = el(p + '-loc').value.trim();
+      const status = el(p + '-loc-status');
+      if (!text) { locDraft[p] = null; status.textContent = '여행지를 입력하면 일자별 날씨를 보여줘요. (비워두면 날씨 없이 사용)'; return; }
+      status.textContent = '확인 중...';
+      Promise.resolve().then(function () { return geocodePlace(text); }).then(function (loc) {
+        locDraft[p] = loc;
+        status.textContent = loc ? '✅ ' + loc.label : '❌ 위치를 찾지 못했어요. 다른 이름(도시명)으로 시도해 보세요.';
+      }).catch(function () {
+        locDraft[p] = null;
+        status.textContent = '⚠️ 확인에 실패했어요. 인터넷 연결을 확인해 주세요.';
+      });
+    }
+
+    // 저장할 때 위치 결정: 기존과 같으면 재사용 → 확인해 둔 값 → 새로 검색. 못 찾으면 "날씨 없이 저장" 선택
+    function resolveLocationForForm(p, existing, text) {
+      if (!text) return Promise.resolve({ proceed: true, location: null });
+      if (validLocation(existing) && existing.name === text) return Promise.resolve({ proceed: true, location: existing });
+      if (locDraft[p] && locDraft[p].name === text) return Promise.resolve({ proceed: true, location: locDraft[p] });
+      return Promise.resolve().then(function () { return geocodePlace(text); }).then(function (loc) {
+        if (loc) return { proceed: true, location: loc };
+        return { proceed: confirm("'" + text + "' 위치를 찾지 못했어요.\n날씨 없이 저장할까요? (취소하면 이름을 바꿔 다시 시도할 수 있어요)"), location: null };
+      }).catch(function () {
+        return { proceed: confirm('위치를 확인하지 못했어요 (인터넷 연결?).\n날씨 없이 저장할까요?'), location: null };
+      });
+    }
+
+    /* ---------- 날씨 가져오기 ---------- */
+    function weatherCacheRead(key) {
+      try {
+        const raw = localStorage.getItem('wx:' + key);
+        if (!raw) return null;
+        const o = JSON.parse(raw);
+        return (o && o.data) ? o : null;
+      } catch (e) { return null; }
+    }
+    function weatherCacheWrite(key, state) {
+      try {
+        localStorage.setItem('wx:' + key, JSON.stringify({ at: state.at, data: state.data }));
+        // 오래된(7일 지난) 캐시 정리
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const k = localStorage.key(i);
+          if (k && k.indexOf('wx:') === 0 && k !== 'wx:' + key) {
+            const o = JSON.parse(localStorage.getItem(k) || '{}');
+            if (!o.at || Date.now() - o.at > 7 * 86400000) localStorage.removeItem(k);
+          }
+        }
+      } catch (e) { /* 저장 공간이 없어도 동작에는 영향 없음 */ }
+    }
+
+    function weatherFetchRange(baseUrl, loc, startYmd, endYmd, forecast) {
+      const daily = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum' + (forecast ? ',precipitation_probability_max' : '');
+      const url = baseUrl + '?latitude=' + loc.lat + '&longitude=' + loc.lon + '&daily=' + daily +
+        '&timezone=auto&start_date=' + startYmd + '&end_date=' + endYmd;
+      const todayY = toYmd(todayMidnight());
+      return fetch(url).then(function (r) {
+        if (!r.ok) throw new Error('weather ' + r.status);
+        return r.json();
+      }).then(function (j) {
+        const d = j && j.daily; const out = {};
+        if (!d || !Array.isArray(d.time)) return out;
+        d.time.forEach(function (ymd, i) {
+          if (d.weather_code[i] == null || d.temperature_2m_max[i] == null) return;
+          out[ymd] = {
+            code: d.weather_code[i], max: d.temperature_2m_max[i], min: d.temperature_2m_min[i],
+            pop: forecast && d.precipitation_probability_max ? d.precipitation_probability_max[i] : null,
+            rain: d.precipitation_sum ? d.precipitation_sum[i] : null,
+            past: ymd < todayY
+          };
+        });
+        return out;
+      });
+    }
+
+    function fetchWeather(loc, startYmd, endYmd) {
+      const today = todayMidnight();
+      const fMin = toYmd(addDaysTo(today, -WEATHER_PAST_DAYS));
+      const fMax = toYmd(addDaysTo(today, WEATHER_FORECAST_AHEAD));
+      const jobs = [];
+      const fs = startYmd > fMin ? startYmd : fMin;
+      const fe = endYmd < fMax ? endYmd : fMax;
+      if (fs <= fe) jobs.push(weatherFetchRange('https://api.open-meteo.com/v1/forecast', loc, fs, fe, true));
+      if (startYmd < fMin) {
+        const dayBefore = toYmd(addDaysTo(parseYmd(fMin), -1));
+        jobs.push(weatherFetchRange('https://archive-api.open-meteo.com/v1/archive', loc, startYmd, endYmd < dayBefore ? endYmd : dayBefore, false));
+      }
+      return Promise.all(jobs).then(function (parts) { return Object.assign({}, ...parts); });
+    }
+
+    function loadWeather() {
+      const loc = getTripLocation();
+      if (!loc || !currentTrip) { weatherState = { key: '', status: 'none', data: {}, at: 0 }; return; }
+      const key = [loc.lat, loc.lon, currentTrip.startDate, currentTrip.endDate].join('|');
+      if (weatherState.key === key && (weatherState.status === 'loading' || (weatherState.status === 'ok' && Date.now() - weatherState.at < WEATHER_TTL))) return;
+
+      const cached = weatherCacheRead(key);
+      weatherState = { key: key, status: cached ? 'ok' : 'loading', data: cached ? cached.data : {}, at: cached ? cached.at : 0 };
+      if (cached) {
+        renderWeatherViews();
+        if (Date.now() - cached.at < WEATHER_TTL) return;     // 충분히 최신이면 새로 받지 않음
+      }
+
+      Promise.resolve().then(function () { return fetchWeather(loc, currentTrip.startDate, currentTrip.endDate); }).then(function (data) {
+        if (weatherState.key !== key) return;                  // 그 사이 다른 여행으로 바뀌었으면 무시
+        weatherState = { key: key, status: 'ok', data: data, at: Date.now() };
+        weatherCacheWrite(key, weatherState);
+        renderWeatherViews();
+      }).catch(function (e) {
+        if (weatherState.key !== key) return;
+        console.warn('날씨를 불러오지 못했어요:', e);
+        if (weatherState.status !== 'ok') weatherState.status = 'error';   // 저장된 값이 있으면 그대로 보여줌
+      });
+    }
+
+    function renderWeatherViews() {
+      if (!currentTrip || !Object.keys(itineraryCache).length) return;
+      renderDashboardPreview();
+      renderTimeline(currentDaySelected);
+    }
+
+    // 일자별 날씨 표시 조각 (variant: 'header' 큰 알약 / 'card' 작은 알약)
+    function weatherChipHtml(dayNum, variant) {
+      if (!getTripLocation() || !currentTrip) return '';
+      const ymd = toYmd(tripDayDate(dayNum));
+      const w = weatherState.data[ymd];
+      if (!w) {
+        const tooFar = ymd > toYmd(addDaysTo(todayMidnight(), WEATHER_FORECAST_AHEAD));
+        return (tooFar && variant === 'header' && weatherState.status !== 'loading')
+          ? '<span class="ml-2 text-[11px] text-gray-400 align-middle">🌤️ 날씨 예보는 출발 약 2주 전부터 보여요</span>' : '';
+      }
+      const info = wmoInfo(w.code);
+      const temp = Math.round(w.max) + '°/' + Math.round(w.min) + '°';
+      const rain = (w.pop != null) ? ' · ☔ ' + Math.round(w.pop) + '%' : ((w.rain || 0) >= 0.5 ? ' · 💧 ' + Number(w.rain).toFixed(1) + 'mm' : '');
+      const tip = info[1] + ' · 최고 ' + Math.round(w.max) + '° / 최저 ' + Math.round(w.min) + '°' + (w.pop != null ? ' · 강수확률 ' + Math.round(w.pop) + '%' : '') + (w.past ? ' (지난 날씨)' : ' (예보)');
+      const cls = variant === 'header'
+        ? 'inline-flex items-center gap-1 ml-2 text-xs font-bold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-100 align-middle'
+        : 'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700';
+      return `<span class="${cls}" title="${escapeAttr(tip)}">${info[0]} ${temp}${rain}</span>`;
+    }
 
     /* ======================================================== */
     /* COUPLE CALENDAR (커플 캘린더)                               */
